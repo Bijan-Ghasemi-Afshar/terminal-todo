@@ -1,7 +1,7 @@
 use std::env;
-use std::fmt::Display;
 use std::fs::File;
 use std::io::{Write};
+use terminal_todo::todo::ToDo;
 
 const CREATE_ACTION: &str = "create";
 const DATABASE: &str = "todo-list.txt";
@@ -47,24 +47,4 @@ fn main() {
         _ => println!("No valid action was provided"),
     }
 
-}
-
-
-#[derive(Debug)]
-struct ToDo {
-    title: String,
-}
-
-impl ToDo {
-    fn new(title: String) -> Self {
-        ToDo {
-            title,
-        }
-    }
-}
-
-impl Display for ToDo {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Title: {}", self.title)
-    }
 }

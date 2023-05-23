@@ -1,12 +1,16 @@
 use std::env;
+use std::fmt::Display;
+use std::fs::File;
+use std::io::{Write};
 
 const CREATE_ACTION: &str = "create";
+const DATABASE: &str = "todo-list.txt";
 
 fn main() {
     let mut args = env::args();
 
     if args.len() < 2 {
-        eprintln!("Action and arguments need to be passed to the program");
+        panic!("Action and arguments need to be passed to the program")
     }
 
     // Skipping the first argument which is the name of the program
@@ -20,9 +24,25 @@ fn main() {
 
     match action.as_str() {
         CREATE_ACTION => {
+            if action_args.len() <=0 { 
+                eprintln!("Arguments need to be passed to the action");
+                panic!();
+            }
+            
             let todo_title = action_args.get(0).unwrap().clone();
-            let first_todo = ToDo::new(todo_title);
-            println!("{:?}", first_todo);
+            let todo = ToDo::new(todo_title);
+            println!("{:?}", todo);
+
+            let mut database: File = File::options()
+                .append(true)
+                .create(true)
+                .open(DATABASE)
+                .expect("Issue finding the file");
+
+            database
+                .write(&format!("{todo}\n")
+                .as_bytes())
+                .expect("Issue writing to the database");
         },
         _ => println!("No valid action was provided"),
     }
@@ -40,5 +60,11 @@ impl ToDo {
         ToDo {
             title,
         }
+    }
+}
+
+impl Display for ToDo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Title: {}", self.title)
     }
 }

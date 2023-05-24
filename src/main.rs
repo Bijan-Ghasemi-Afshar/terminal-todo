@@ -1,50 +1,39 @@
-use std::env;
-use std::fs::File;
-use std::io::{Write};
-use terminal_todo::todo::ToDo;
+use std::{env, process};
+use terminal_todo::validator::ToDoOperation;
 
-const CREATE_ACTION: &str = "create";
-const DATABASE: &str = "todo-list.txt";
+// const DATABASE: &str = "todo-list.txt";
 
 fn main() {
-    let mut args = env::args();
+    let todo_operations: ToDoOperation = ToDoOperation::new(env::args())
+        .unwrap_or_else(|err| {
+        eprintln!("{err}");
+        process::exit(1);
+    });
 
-    if args.len() < 2 {
-        panic!("Action and arguments need to be passed to the program")
-    }
+    println!("{todo_operations}");
 
-    // Skipping the first argument which is the name of the program
-    args.next().unwrap();
+    // match action.as_str() {
+    //     CREATE_ACTION => {
+    //         if action_args.len() <=0 {
+    //             eprintln!("Arguments need to be passed to the action");
+    //             panic!();
+    //         }
 
-    let action = args.next().unwrap();
-    println!("Action: {action}");
+    //         let todo_title = action_args.get(0).unwrap().clone();
+    //         let todo = ToDo::new(todo_title);
+    //         println!("{:?}", todo);
 
-    let action_args: Vec<String> = args.collect();
-    println!("Action arguments: {:?}", action_args);
+    //         let mut database: File = File::options()
+    //             .append(true)
+    //             .create(true)
+    //             .open(DATABASE)
+    //             .expect("Issue finding the file");
 
-    match action.as_str() {
-        CREATE_ACTION => {
-            if action_args.len() <=0 { 
-                eprintln!("Arguments need to be passed to the action");
-                panic!();
-            }
-            
-            let todo_title = action_args.get(0).unwrap().clone();
-            let todo = ToDo::new(todo_title);
-            println!("{:?}", todo);
-
-            let mut database: File = File::options()
-                .append(true)
-                .create(true)
-                .open(DATABASE)
-                .expect("Issue finding the file");
-
-            database
-                .write(&format!("{todo}\n")
-                .as_bytes())
-                .expect("Issue writing to the database");
-        },
-        _ => println!("No valid action was provided"),
-    }
-
+    //         database
+    //             .write(&format!("{todo}\n")
+    //             .as_bytes())
+    //             .expect("Issue writing to the database");
+    //     },
+    //     _ => println!("No valid action was provided"),
+    // }
 }

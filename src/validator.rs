@@ -1,17 +1,17 @@
 use std::env::Args;
 use std::fmt::Display;
+use crate::validator::valid_action::VALID_ACTIONS;
 
-// Valid Actions
-const CREATE_ACTION: &str = "create";
+pub mod valid_action;
 
 pub struct ToDoOperation {
-    action: String,
+    operation: String,
     arguments: Vec<String>,
 }
 
 impl ToDoOperation {
     pub fn new(mut user_input: Args) -> Result<Self, &'static str> {
-        let mut action: String = "".into();
+        let mut operation: String = "".into();
         let mut arguments: Vec<String> = vec![];
 
         if user_input.len() < 2 {
@@ -21,8 +21,8 @@ impl ToDoOperation {
         // Skipping the first arg since it the program name
         user_input.next();
 
-        action = match user_input.next() {
-            Some(act) => act,
+        operation = match user_input.next() {
+            Some(op) => op,
             None => return Err("Error parsing action"),
         };
 
@@ -30,12 +30,13 @@ impl ToDoOperation {
             arguments.push(arg);
         }
 
-        Ok(ToDoOperation { action, arguments })
+        Ok(ToDoOperation { operation, arguments })
     }
+
 }
 
 impl Display for ToDoOperation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Action: {}\nArguments: {:?}", self.action, self.arguments)
+        write!(f, "Operation: {}\nArguments: {:?}", self.operation, self.arguments)
     }
 }

@@ -1,16 +1,21 @@
+use crate::error_logger::ErrorLogger;
 use crate::validator::valid_action::{ValidAction, VALID_ACTIONS};
 use std::env::Args;
 use std::fmt::Display;
-use std::io;
+use std::io::{self, Write};
 
 pub mod valid_action;
 
-pub struct ToDoOperation {
+pub struct ToDoOperation<W> 
+where
+    W: Write
+{
     operation: ValidAction,
     arguments: Vec<String>,
+    err_lgr: ErrorLogger<W>,
 }
 
-impl ToDoOperation {
+impl<W> ToDoOperation<W> where W: Write {
     pub fn new(mut user_input: Args) -> Result<Self, &'static str> {
         if user_input.len() < 2 {
             return Err("An action needs to be provided [create, list]");
@@ -28,10 +33,15 @@ impl ToDoOperation {
         // Get the operation arguments
         let arguments = ToDoOperation::validate_arguments(user_input, &operation)?;
 
-        Ok(ToDoOperation {
+        let mut err_lgr = ErrorLogger::new(io::stderr());
+
+        let todo_op = ToDoOperation {
             operation,
             arguments,
-        })
+            err_lgr
+        };
+
+        Ok(todo_op)
     }
 
     fn validate_operation(operation: String) -> Result<ValidAction, &'static str> {
@@ -67,7 +77,7 @@ impl ToDoOperation {
     }
 }
 
-impl Display for ToDoOperation {
+impl<W> Display for ToDoOperation<W> where W: Write {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,

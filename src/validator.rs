@@ -1,6 +1,7 @@
 use crate::validator::valid_action::{ValidAction, VALID_ACTIONS};
 use std::env::Args;
 use std::fmt::Display;
+use std::io;
 
 pub mod valid_action;
 
@@ -78,7 +79,6 @@ impl Display for ToDoOperation {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
     #[test]
@@ -111,6 +111,18 @@ mod tests {
         assert_eq!(
             ToDoOperation::validate_arguments(args.into_iter(), &action_with_args),
             Ok(vec![String::from("test"), String::from("test")])
+        );
+    }
+
+    #[test]
+    fn validates_arguments_if_not_passed_required_arguments() {
+        let action_with_no_required_args: ValidAction = ValidAction {
+            name: "list",
+            requires_arguments: true,
+        };
+        assert_eq!(
+            ToDoOperation::validate_arguments([].into_iter(), &action_with_no_required_args),
+            Err("Operation requires arguments"),
         );
     }
 }

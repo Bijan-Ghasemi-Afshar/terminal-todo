@@ -1,28 +1,24 @@
-use std::{error::Error, io::Write};
+use std::{error::Error, io::Write, borrow::BorrowMut};
 
-pub trait Log {
+pub trait Logger {
     fn log<'a>(&mut self, msg: &'a str) -> Result<&'a str, Box<dyn Error>>;
 }
 
-pub struct ErrorLogger<W>
-where
-    W: Write,
+pub struct ErrorLogger
 {
-    pub write: W,
+    write: Box<dyn Write>,
 }
 
-impl<W> ErrorLogger<W>
-where
-    W: Write,
+impl ErrorLogger
 {
-    pub fn new(writer: W) -> ErrorLogger<W> {
+    pub fn new(writer: Box<dyn Write>) -> Self {
         ErrorLogger { write: writer }
     }
 }
 
-// impl<'a, W: Write> Log for ErrorLogger<'a, W> {
-//     fn log<'a>(&mut self, msg: &'a str) -> Result<&'a str, Box<dyn Error>> {
-//         write!(self.write, "{}", &msg)?;
-//         Ok(&msg)
-//     }
-// }
+impl Logger for ErrorLogger {
+    fn log<'a>(&mut self, msg: &'a str) -> Result<&'a str, Box<dyn Error>> {
+        writeln!(self.borrow_mut().write, "{}", &msg)?;
+        Ok(&msg)
+    }
+}

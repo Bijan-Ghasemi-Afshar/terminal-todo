@@ -1,23 +1,29 @@
 use std::{
+    cell::RefCell,
     env,
     io::{self},
     process,
-    rc::Rc, cell::RefCell,
+    rc::Rc,
 };
-use terminal_todo::{error_logger::{ErrorLogger, Logger}, validator::ToDoOperation};
+use terminal_todo::{
+    error_logger::{ErrorLogger, Logger},
+    validator::ToDoOperation,
+};
 
 // const DATABASE: &str = "todo-list.txt";
 
 fn main() {
-    // let error_logger = Rc::new(RefCell::new(Box::new(ErrorLogger::new(Box::new(io::stderr()))) as dyn Logger));
+    let writer = Box::new(io::stderr());
 
-    // let todo_operations: ToDoOperation = ToDoOperation::new(env::args(), Rc::clone(&error_logger))
-    //     .unwrap_or_else(|err| {
-    //         eprintln!("{err}");
-    //         process::exit(1);
-    //     });
+    let error_logger = Rc::new(RefCell::new(ErrorLogger::new(writer))) as Rc<RefCell<dyn Logger>>;
 
-    // println!("{todo_operations}");
+    let todo_operations: ToDoOperation = ToDoOperation::new(env::args(), error_logger)
+        .unwrap_or_else(|err| {
+            eprintln!("{err}");
+            process::exit(1);
+        });
+
+    println!("{todo_operations}");
 
     // match action.as_str() {
     //     CREATE_ACTION => {

@@ -1,7 +1,4 @@
-use std::{
-    error::Error,
-    io::Write,
-};
+use std::{error::Error, io::Write};
 
 pub trait Logger {
     fn log<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn Error>>;

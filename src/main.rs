@@ -9,15 +9,15 @@ use terminal_todo::{error_logger::{ErrorLogger, Logger}, validator::ToDoOperatio
 // const DATABASE: &str = "todo-list.txt";
 
 fn main() {
-    let error_logger = Rc::new(RefCell::new(Box::new(ErrorLogger::new(Box::new(io::stderr()))) as Box<dyn Logger>));
+    // let error_logger = Rc::new(RefCell::new(Box::new(ErrorLogger::new(Box::new(io::stderr()))) as dyn Logger));
 
-    let todo_operations: ToDoOperation = ToDoOperation::new(env::args(), Rc::clone(&error_logger))
-        .unwrap_or_else(|err| {
-            eprintln!("{err}");
-            process::exit(1);
-        });
+    // let todo_operations: ToDoOperation = ToDoOperation::new(env::args(), Rc::clone(&error_logger))
+    //     .unwrap_or_else(|err| {
+    //         eprintln!("{err}");
+    //         process::exit(1);
+    //     });
 
-    println!("{todo_operations}");
+    // println!("{todo_operations}");
 
     // match action.as_str() {
     //     CREATE_ACTION => {

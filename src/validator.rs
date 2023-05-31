@@ -1,19 +1,23 @@
-use crate::error_logger::{ErrorLogger, Logger};
+use crate::error_logger::Logger;
 use crate::validator::valid_action::{ValidAction, VALID_ACTIONS};
+use std::cell::RefCell;
 use std::env::Args;
 use std::fmt::Display;
-use std::io::{self};
+use std::rc::Rc;
 
 pub mod valid_action;
 
 pub struct ToDoOperation {
     operation: ValidAction,
     arguments: Vec<String>,
-    err_lgr: ErrorLogger,
+    err_lgr: Rc<RefCell<Box<dyn Logger>>>,
 }
 
 impl ToDoOperation {
-    pub fn new(mut user_input: Args) -> Result<Self, &'static str> {
+    pub fn new(
+        mut user_input: Args,
+        logger: Rc<RefCell<Box<dyn Logger>>>,
+    ) -> Result<Self, &'static str> {
         if user_input.len() < 2 {
             return Err("An action needs to be provided [create, list]");
         }
@@ -27,15 +31,13 @@ impl ToDoOperation {
             None => return Err("Error parsing action"),
         };
 
-        let mut err_lgr = ErrorLogger::new(Box::new(io::stderr()));
-
         // Get the operation arguments
-        let arguments = ToDoOperation::validate_arguments(user_input, &operation, &mut err_lgr)?;
+        let arguments = ToDoOperation::validate_arguments(user_input, &operation, logger.clone())?;
 
         let todo_op = ToDoOperation {
             operation,
             arguments,
-            err_lgr,
+            err_lgr: logger,
         };
 
         Ok(todo_op)
@@ -53,7 +55,7 @@ impl ToDoOperation {
     fn validate_arguments<T>(
         mut user_args: T,
         action: &ValidAction,
-        err_logger: &mut ErrorLogger,
+        err_logger: Rc<RefCell<Box<dyn Logger>>>,
     ) -> Result<Vec<String>, &'static str>
     where
         T: Iterator<Item = String>,
@@ -68,6 +70,7 @@ impl ToDoOperation {
             x if x && arguments.len() <= 0 => return Err("Operation requires arguments"),
             x if !x && arguments.len() > 0 => {
                 err_logger
+                    .borrow_mut()
                     .log(&"Operation does not take arguments")
                     .unwrap();
                 Ok(arguments)
@@ -89,10 +92,14 @@ impl Display for ToDoOperation {
 
 #[cfg(test)]
 mod tests {
+    use std::{
+        borrow::{Borrow, BorrowMut},
+        error::Error,
+        io::{self, ErrorKind},
+    };
+
     use super::*;
-    use crate::error_logger::ErrorLogger;
-
-
+    use crate::error_logger::{ErrorLogger, self};
 
     #[test]
     fn validates_operation_correctly() {
@@ -121,11 +128,13 @@ mod tests {
             requires_arguments: true,
         };
 
-        let mut err_logger = ErrorLogger::new(Box::new(vec![]));
+        let err_logger = Rc::new(RefCell::new(
+            Box::new(ErrorLogger::new(Box::new(vec![]))) as Box<dyn Logger>
+        ));
 
         let args = vec![String::from("test"), String::from("test")];
         assert_eq!(
-            ToDoOperation::validate_arguments(args.into_iter(), &action_with_args, &mut err_logger),
+            ToDoOperation::validate_arguments(args.into_iter(), &action_with_args, err_logger),
             Ok(vec![String::from("test"), String::from("test")])
         );
     }
@@ -136,15 +145,35 @@ mod tests {
             name: "list",
             requires_arguments: true,
         };
-        let mut err_logger = ErrorLogger::new(Box::new(vec![]));
+
+        let err_logger = Rc::new(RefCell::new(
+            Box::new(ErrorLogger::new(Box::new(vec![]))) as Box<dyn Logger>
+        ));
         assert_eq!(
             ToDoOperation::validate_arguments(
                 [].into_iter(),
                 &action_with_no_required_args,
-                &mut err_logger
+                err_logger
             ),
             Err("Operation requires arguments"),
         );
+    }
+
+    #[derive(Debug)]
+    struct MockErrorLogger {
+        was_called: bool,
+        message: String,
+    }
+
+    impl Logger for MockErrorLogger {
+        fn log<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn std::error::Error>> {
+            if msg == "" {
+                return Err(Box::new(io::Error::new(ErrorKind::Other, "oh no!")));
+            }
+            self.was_called = true;
+            self.message = msg.into();
+            Ok(())
+        }
     }
 
     #[test]
@@ -154,14 +183,29 @@ mod tests {
             requires_arguments: false,
         };
         let args = vec![String::from("test"), String::from("test")];
-        let mut err_logger = ErrorLogger::new(Box::new(vec![]));
+
+
+        let mock_logger = MockErrorLogger {
+            message: "".into(),
+            was_called: false,
+        };
+
+        let err_logger = Rc::new(RefCell::new(mock_logger));
+
+        let ref_err = Box::new(err_logger.as_ptr());
+
         assert_eq!(
             ToDoOperation::validate_arguments(
                 args.into_iter(),
                 &action_with_no_required_args,
-                &mut err_logger
+                Rc::clone(&err_logger)
             ),
             Ok(vec![String::from("test"), String::from("test")])
-        );   
+        );
+
+        // let x = err_logger.into_inner();
+
+        // assert!(wa)
+
     }
 }

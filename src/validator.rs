@@ -95,30 +95,30 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::io::{self, ErrorKind};
+    use std::io::{self, ErrorKind, Stderr};
 
     use super::*;
     use crate::error_logger::ErrorLogger;
 
-    // #[test]
-    // fn validates_operation_correctly() {
-    //     let valid_action = ValidAction {
-    //         name: "create",
-    //         requires_arguments: false,
-    //     };
-    //     assert_eq!(
-    //         ToDoOperation::validate_operation("create".into()),
-    //         Ok(valid_action)
-    //     );
-    // }
+    #[test]
+    fn validates_operation_correctly() {
+        let valid_action = ValidAction {
+            name: "create",
+            requires_arguments: false,
+        };
+        assert_eq!(
+            ToDoOperation::<ErrorLogger<Stderr>>::validate_operation("create".into()),
+            Ok(valid_action)
+        );
+    }
 
-    // #[test]
-    // fn returns_error_if_operation_in_invalid() {
-    //     assert_eq!(
-    //         ToDoOperation::validate_operation("invalid".into()),
-    //         Err("Operation is not valid.\n[create, list]")
-    //     );
-    // }
+    #[test]
+    fn returns_error_if_operation_in_invalid() {
+        assert_eq!(
+            ToDoOperation::<ErrorLogger<Stderr>>::validate_operation("invalid".into()),
+            Err("Operation is not valid.\n[create, list]")
+        );
+    }
 
     #[test]
     fn validates_arguments_correctly() {

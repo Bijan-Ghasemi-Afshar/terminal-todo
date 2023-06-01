@@ -1,24 +1,17 @@
 use std::{
-    cell::RefCell,
     env,
-    io::{self},
+    io::{self, Stderr},
     process,
-    rc::Rc,
 };
-use terminal_todo::{
-    error_logger::{ErrorLogger, Logger},
-    validator::ToDoOperation,
-};
+use terminal_todo::{error_logger::ErrorLogger, validator::ToDoOperation};
 
 // const DATABASE: &str = "todo-list.txt";
 
 fn main() {
-    let writer = Box::new(io::stderr());
+    let error_logger: ErrorLogger<Stderr> = ErrorLogger::new(io::stderr());
 
-    let error_logger = Rc::new(RefCell::new(ErrorLogger::new(writer))) as Rc<RefCell<dyn Logger>>;
-
-    let todo_operations: ToDoOperation = ToDoOperation::new(env::args(), error_logger)
-        .unwrap_or_else(|err| {
+    let todo_operations: ToDoOperation<ErrorLogger<Stderr>> =
+        ToDoOperation::new(env::args(), error_logger).unwrap_or_else(|err| {
             eprintln!("{err}");
             process::exit(1);
         });

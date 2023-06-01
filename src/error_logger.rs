@@ -4,17 +4,26 @@ pub trait Logger {
     fn log<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn Error>>;
 }
 
-pub struct ErrorLogger {
-    write: Box<dyn Write>,
+pub struct ErrorLogger<W>
+where
+    W: Write,
+{
+    write: W,
 }
 
-impl ErrorLogger {
-    pub fn new(writer: Box<dyn Write>) -> Self {
+impl<W> ErrorLogger<W>
+where
+    W: Write,
+{
+    pub fn new(writer: W) -> Self {
         ErrorLogger { write: writer }
     }
 }
 
-impl Logger for ErrorLogger {
+impl<W> Logger for ErrorLogger<W>
+where
+    W: Write,
+{
     fn log<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn Error>> {
         writeln!(self.write, "{}", &msg)?;
         Ok(())

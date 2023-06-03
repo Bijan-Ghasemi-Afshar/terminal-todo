@@ -1,9 +1,54 @@
 use crate::error_logger::Logger;
-use crate::validator::valid_action::{ValidAction, VALID_ACTIONS};
 use std::env::Args;
 use std::fmt::Display;
+use std::io::{self, stdout, Write};
 
-pub mod valid_action;
+const CREATE: &'static str = "create";
+const LIST: &'static str = "list";
+
+#[derive(PartialEq, Debug)]
+pub struct ValidAction {
+    pub name: &'static str,
+    pub requires_arguments: bool,
+    pub arguments: Vec<String>,
+    pub operation: fn(Vec<String>) -> (),
+}
+
+fn list_operation(args: Vec<String>) {
+    println!("Printing all ToDo items");
+    println!("{:?}",args);
+}
+
+fn create_operation(_: Vec<String>) {
+    println!("Creating a ToDo item");
+
+    print!("Title: ");
+    stdout().flush().unwrap();
+    let mut title = String::new();
+    io::stdin().read_line(&mut title).unwrap();
+    
+    
+    print!("Description: ");
+    stdout().flush().unwrap();
+    let mut description = String::new();
+    io::stdin().read_line(&mut description).unwrap();
+
+}
+
+pub const VALID_ACTIONS: [ValidAction; 2] = [
+    ValidAction {
+        name: CREATE,
+        requires_arguments: false,
+        arguments: vec![],
+        operation: create_operation,
+    },
+    ValidAction {
+        name: LIST,
+        requires_arguments: true,
+        arguments: vec![],
+        operation: list_operation,
+    },
+];
 
 impl ValidAction {
     pub fn validate_input<L: Logger>(
@@ -88,7 +133,7 @@ mod tests {
     use super::*;
     use crate::error_logger::ErrorLogger;
 
-    fn empty_func() {}
+    fn empty_func(_: Vec<String>) {}
 
     #[test]
     fn validates_operation_correctly() {

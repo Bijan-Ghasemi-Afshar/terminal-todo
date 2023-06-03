@@ -1,13 +1,16 @@
 use crate::error_logger::Logger;
+use crate::todo::ToDo;
 use std::env::Args;
 use std::fmt::Display;
 use std::io::{self, stdout, Write};
+
+pub mod database;
 
 const CREATE: &'static str = "create";
 const LIST: &'static str = "list";
 
 #[derive(PartialEq, Debug)]
-pub struct ValidAction {
+pub struct Action {
     pub name: &'static str,
     pub requires_arguments: bool,
     pub arguments: Vec<String>,
@@ -33,16 +36,22 @@ fn create_operation(_: Vec<String>) {
     let mut description = String::new();
     io::stdin().read_line(&mut description).unwrap();
 
+    let todo: ToDo = ToDo::new(title, description);
+
+    println!("{:#?}", todo);
+    println!("{}", todo);
+
+    database::store_item(todo);
 }
 
-pub const VALID_ACTIONS: [ValidAction; 2] = [
-    ValidAction {
+pub const ACTIONS: [Action; 2] = [
+    Action {
         name: CREATE,
         requires_arguments: false,
         arguments: vec![],
         operation: create_operation,
     },
-    ValidAction {
+    Action {
         name: LIST,
         requires_arguments: true,
         arguments: vec![],
@@ -50,7 +59,7 @@ pub const VALID_ACTIONS: [ValidAction; 2] = [
     },
 ];
 
-impl ValidAction {
+impl Action {
     pub fn validate_input<L: Logger>(
         mut user_input: Args,
         mut logger: L,
@@ -63,19 +72,19 @@ impl ValidAction {
         user_input.next();
 
         // Get the operation
-        let valid_action: ValidAction = match user_input.next() {
-            Some(op) => ValidAction::validate_operation(op)?,
+        let valid_action: Action = match user_input.next() {
+            Some(op) => Action::validate_operation(op)?,
             None => return Err("Error parsing action"),
         };
 
         // Get the operation arguments
-        let valid_action = ValidAction::validate_arguments(user_input, valid_action, &mut logger)?;
+        let valid_action = Action::validate_arguments(user_input, valid_action, &mut logger)?;
 
         Ok(valid_action)
     }
 
-    fn validate_operation(operation: String) -> Result<ValidAction, &'static str> {
-        for action in VALID_ACTIONS {
+    fn validate_operation(operation: String) -> Result<Action, &'static str> {
+        for action in ACTIONS {
             if action.name == operation {
                 return Ok(action);
             }
@@ -85,9 +94,9 @@ impl ValidAction {
 
     fn validate_arguments<'a, T, L: Logger>(
         mut user_args: T,
-        valid_action: ValidAction,
+        valid_action: Action,
         err_logger: &mut L,
-    ) -> Result<ValidAction, &'static str>
+    ) -> Result<Action, &'static str>
     where
         T: Iterator<Item = String>,
     {
@@ -103,12 +112,12 @@ impl ValidAction {
                 err_logger
                     .log(&"Operation does not take arguments")
                     .unwrap();
-                Ok(ValidAction {
+                Ok(Action {
                     arguments,
                     ..valid_action
                 })
             }
-            _ => Ok(ValidAction {
+            _ => Ok(Action {
                 arguments,
                 ..valid_action
             }),
@@ -116,7 +125,7 @@ impl ValidAction {
     }
 }
 
-impl Display for ValidAction {
+impl Display for Action {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -137,21 +146,21 @@ mod tests {
 
     #[test]
     fn validates_operation_correctly() {
-        let valid_action = ValidAction::validate_operation("create".into());
+        let valid_action = Action::validate_operation("create".into());
         assert!(valid_action.is_ok());
     }
 
     #[test]
     fn returns_error_if_operation_in_invalid() {
         assert_eq!(
-            ValidAction::validate_operation("invalid".into()),
+            Action::validate_operation("invalid".into()),
             Err("Operation is not valid.\n[create, list]")
         );
     }
 
     #[test]
     fn validates_arguments_correctly() {
-        let action_with_args: ValidAction = ValidAction {
+        let action_with_args: Action = Action {
             name: "list",
             requires_arguments: true,
             arguments: vec![],
@@ -163,14 +172,14 @@ mod tests {
         let args = vec![String::from("test"), String::from("test")];
 
         let valid_action =
-            ValidAction::validate_arguments(args.into_iter(), action_with_args, &mut err_logger);
+            Action::validate_arguments(args.into_iter(), action_with_args, &mut err_logger);
 
         assert!(valid_action.is_ok());
     }
 
     #[test]
     fn validates_arguments_if_not_passed_required_arguments() {
-        let action_with_no_required_args: ValidAction = ValidAction {
+        let action_with_no_required_args: Action = Action {
             name: "list",
             requires_arguments: true,
             arguments: vec![],
@@ -180,7 +189,7 @@ mod tests {
         let mut err_logger = ErrorLogger::new(Box::new(vec![]));
 
         assert_eq!(
-            ValidAction::validate_arguments(
+            Action::validate_arguments(
                 [].into_iter(),
                 action_with_no_required_args,
                 &mut err_logger
@@ -205,7 +214,7 @@ mod tests {
 
     #[test]
     fn prints_warning_if_arguments_are_not_required() {
-        let action_with_no_required_args: ValidAction = ValidAction {
+        let action_with_no_required_args: Action = Action {
             name: "create",
             requires_arguments: false,
             arguments: vec![],
@@ -215,7 +224,7 @@ mod tests {
 
         let mut mock_logger = MockErrorLogger { was_called: false };
 
-        let valid_action = ValidAction::validate_arguments(
+        let valid_action = Action::validate_arguments(
             args.into_iter(),
             action_with_no_required_args,
             &mut mock_logger,

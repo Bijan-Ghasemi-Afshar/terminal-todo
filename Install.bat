@@ -4,7 +4,7 @@ REM Define the installation directory
 set "install_dir=C:\Program Files\terminal-todo"
 
 REM Define the binary file name
-set "binary_file=target/release/terminal-todo.exe"
+set "binary_file=target\release\terminal-todo.exe"
 
 REM Create the installation directory if it doesn't exist
 mkdir "%install_dir%"

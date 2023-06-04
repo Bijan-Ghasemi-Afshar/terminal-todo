@@ -1,6 +1,6 @@
 #!/bin/bash
 
-install_dir="/usr/local"
+install_dir="/usr/local/sbin"
 
 sudo mkdir -p "$install_dir"
 

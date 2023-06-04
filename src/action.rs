@@ -21,7 +21,12 @@ fn list_operation(_: Vec<String>) {
     println!("Printing all ToDo items");
     let todos: Vec<ToDo> = database::read_items();
 
-    todos.iter().for_each(|todo| println!("{todo}"));
+    todos.iter().enumerate().for_each(|(index, todo)| {
+        println!(
+            "===============\n# {}\n{todo}\n===============\n",
+            index + 1
+        )
+    });
 }
 
 fn create_operation(_: Vec<String>) {
@@ -31,8 +36,7 @@ fn create_operation(_: Vec<String>) {
     stdout().flush().unwrap();
     let mut title = String::new();
     io::stdin().read_line(&mut title).unwrap();
-    
-    
+
     print!("Description: ");
     stdout().flush().unwrap();
     let mut description = String::new();

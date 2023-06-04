@@ -1,6 +1,5 @@
 use std::fmt::Display;
 
-
 #[derive(Debug)]
 pub struct ToDo {
     title: String,
@@ -39,13 +38,7 @@ impl ToDo {
 
 impl Display for ToDo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-"===============\n
-Title: {}\n
-Description: {}\n
-Done: {}\n
-===============",
+        write!(f,"Title: {}\nDescription: {}\nDone: {}",
             self.title.replace('\n', ""),
             self.description.replace('\n', ""),
             self.done,

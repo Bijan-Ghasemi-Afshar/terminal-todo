@@ -6,7 +6,7 @@ A simple terminal-based todo application.
 
 * Build the app
 ```bash
-cargo run build
+cargo build --release
 ```
 
 ### Windows

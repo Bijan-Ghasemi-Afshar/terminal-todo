@@ -17,9 +17,11 @@ pub struct Action {
     pub operation: fn(Vec<String>) -> (),
 }
 
-fn list_operation(args: Vec<String>) {
+fn list_operation(_: Vec<String>) {
     println!("Printing all ToDo items");
-    println!("{:?}",args);
+    let todos: Vec<ToDo> = database::read_items();
+
+    todos.iter().for_each(|todo| println!("{todo}"));
 }
 
 fn create_operation(_: Vec<String>) {
@@ -38,9 +40,6 @@ fn create_operation(_: Vec<String>) {
 
     let todo: ToDo = ToDo::new(title, description);
 
-    println!("{:#?}", todo);
-    println!("{}", todo);
-
     database::store_item(todo);
 }
 
@@ -53,7 +52,7 @@ pub const ACTIONS: [Action; 2] = [
     },
     Action {
         name: LIST,
-        requires_arguments: true,
+        requires_arguments: false,
         arguments: vec![],
         operation: list_operation,
     },

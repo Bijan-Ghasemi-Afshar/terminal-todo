@@ -9,6 +9,8 @@ pub mod database;
 const CREATE: &'static str = "create";
 const LIST: &'static str = "list";
 const EDIT: &'static str = "edit";
+const DONE: &'static str = "done";
+const UNDONE: &'static str = "undone";
 
 #[derive(PartialEq, Debug)]
 pub struct Action {
@@ -88,7 +90,35 @@ fn edit_operation(args: Vec<String>) {
     println!("Updated the database");
 }
 
-pub const ACTIONS: [Action; 3] = [
+fn update_todo_status(args: Vec<String>, status: String) {
+    let item_index: usize = args
+        .get(0)
+        .unwrap()
+        .parse::<usize>()
+        .expect("Given ToDo Item index is wrong")
+        - 1;
+    println!("Editing #{} ToDo item", item_index + 1);
+    let mut todos: Vec<ToDo> = database::read_items();
+
+    let mut edit_todo = todos
+        .get_mut(item_index)
+        .expect("Given ToDo Item index is wrong");
+
+
+    edit_todo.done = status;
+    
+    database::store_existing_items(todos);
+}
+
+fn done_operation(args: Vec<String>) {
+    update_todo_status(args, "✅".into())
+}
+
+fn undone_operation(args: Vec<String>) {
+    update_todo_status(args, "❌".into())
+}
+
+pub const ACTIONS: [Action; 5] = [
     Action {
         name: CREATE,
         requires_arguments: false,
@@ -106,6 +136,18 @@ pub const ACTIONS: [Action; 3] = [
         requires_arguments: true,
         arguments: vec![],
         operation: edit_operation,
+    },
+    Action {
+        name: DONE,
+        requires_arguments: true,
+        arguments: vec![],
+        operation: done_operation,
+    },
+    Action {
+        name: UNDONE,
+        requires_arguments: true,
+        arguments: vec![],
+        operation: undone_operation,
     },
 ];
 

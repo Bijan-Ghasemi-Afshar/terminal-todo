@@ -1,14 +1,20 @@
 use std::fmt::Display;
 
+
 #[derive(Debug)]
 pub struct ToDo {
     title: String,
     description: String,
+    done: String,
 }
 
 impl ToDo {
     pub fn new(title: String, description: String) -> Self {
-        ToDo { title, description }
+        ToDo {
+            title,
+            description,
+            done: "❌".into(),
+        }
     }
 
     pub fn deserialise(todo_str: &str) -> Self {
@@ -17,11 +23,17 @@ impl ToDo {
         ToDo {
             title: props.get(0).unwrap().to_string(),
             description: props.get(1).unwrap().to_string(),
+            done: props.get(2).unwrap().to_string(),
         }
     }
 
     pub fn serialise(&self) -> String {
-        format!("{},{}\n", self.title.replace('\n', ""), self.description.replace('\n', ""))
+        format!(
+            "{},{},{}\n",
+            self.title.replace('\n', ""),
+            self.description.replace('\n', ""),
+            self.done
+        )
     }
 }
 
@@ -29,9 +41,14 @@ impl Display for ToDo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "===============\nTitle: {}\nDescription: {}\n===============",
+"===============\n
+Title: {}\n
+Description: {}\n
+Done: {}\n
+===============",
             self.title.replace('\n', ""),
-            self.description.replace('\n', "")
+            self.description.replace('\n', ""),
+            self.done,
         )
     }
 }

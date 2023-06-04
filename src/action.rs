@@ -11,6 +11,7 @@ const LIST: &'static str = "list";
 const EDIT: &'static str = "edit";
 const DONE: &'static str = "done";
 const UNDONE: &'static str = "undone";
+const DELETE: &'static str = "delete";
 
 #[derive(PartialEq, Debug)]
 pub struct Action {
@@ -118,7 +119,26 @@ fn undone_operation(args: Vec<String>) {
     update_todo_status(args, "❌".into())
 }
 
-pub const ACTIONS: [Action; 5] = [
+fn delete_operation(args: Vec<String>) {
+    let mut todos: Vec<ToDo> = database::read_items();
+    
+    let item_index: usize = args
+        .get(0)
+        .unwrap()
+        .parse::<usize>()
+        .expect("Given ToDo Item index is wrong")
+        - 1;
+
+    println!("Deleting #{} ToDo item", item_index + 1);
+
+    todos.remove(item_index);
+
+    database::store_existing_items(todos);
+
+    println!("Updated the database");
+}
+
+pub const ACTIONS: [Action; 6] = [
     Action {
         name: CREATE,
         requires_arguments: false,
@@ -148,6 +168,12 @@ pub const ACTIONS: [Action; 5] = [
         requires_arguments: true,
         arguments: vec![],
         operation: undone_operation,
+    },
+    Action {
+        name: DELETE,
+        requires_arguments: true,
+        arguments: vec![],
+        operation: delete_operation,
     },
 ];
 

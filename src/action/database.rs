@@ -21,6 +21,27 @@ pub fn store_item(todo: ToDo) {
     println!("Item added to the database");
 }
 
+pub fn store_existing_items(todos: Vec<ToDo>) {
+    let mut database: File = File::options()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(DATABASE)
+        .expect("Error openning the database");
+
+    let mut serialised_todos = Vec::new();
+
+    todos.iter().for_each(|todo| {
+        serialised_todos.push(todo.serialise());
+    });
+
+    let serialised_todos = serialised_todos.join("");
+
+    database
+        .write(&serialised_todos.as_bytes())
+        .expect("Error storing ToDo item");
+}
+
 pub fn read_items() -> Vec<ToDo> {
     let mut database: File = File::options()
         .read(true)

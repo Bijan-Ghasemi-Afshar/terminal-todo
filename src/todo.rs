@@ -2,9 +2,9 @@ use std::fmt::Display;
 
 #[derive(Debug)]
 pub struct ToDo {
-    title: String,
-    description: String,
-    done: String,
+    pub title: String,
+    pub description: String,
+    pub done: String,
 }
 
 impl ToDo {

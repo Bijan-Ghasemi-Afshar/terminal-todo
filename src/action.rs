@@ -8,6 +8,7 @@ pub mod database;
 
 const CREATE: &'static str = "create";
 const LIST: &'static str = "list";
+const EDIT: &'static str = "edit";
 
 #[derive(PartialEq, Debug)]
 pub struct Action {
@@ -47,7 +48,47 @@ fn create_operation(_: Vec<String>) {
     database::store_item(todo);
 }
 
-pub const ACTIONS: [Action; 2] = [
+fn edit_operation(args: Vec<String>) {
+    let item_index: usize = args
+        .get(0)
+        .unwrap()
+        .parse::<usize>()
+        .expect("Given ToDo Item index is wrong")
+        - 1;
+
+    println!("Editing #{} ToDo item", item_index + 1);
+    let mut todos: Vec<ToDo> = database::read_items();
+
+    let mut edit_todo = todos
+        .get_mut(item_index)
+        .expect("Given ToDo Item index is wrong");
+
+    println!("{edit_todo}");
+
+    print!("New Title: ");
+    stdout().flush().unwrap();
+    let mut new_title = String::new();
+    io::stdin().read_line(&mut new_title).unwrap();
+
+    print!("New Description: ");
+    stdout().flush().unwrap();
+    let mut new_description = String::new();
+    io::stdin().read_line(&mut new_description).unwrap();
+
+    if new_title.len() > 1 {
+       edit_todo.title = new_title;
+    }
+
+    if new_description.len() > 1 {
+        edit_todo.description = new_description;
+    }
+
+    database::store_existing_items(todos);
+
+    println!("Updated the database");
+}
+
+pub const ACTIONS: [Action; 3] = [
     Action {
         name: CREATE,
         requires_arguments: false,
@@ -59,6 +100,12 @@ pub const ACTIONS: [Action; 2] = [
         requires_arguments: false,
         arguments: vec![],
         operation: list_operation,
+    },
+    Action {
+        name: EDIT,
+        requires_arguments: true,
+        arguments: vec![],
+        operation: edit_operation,
     },
 ];
 

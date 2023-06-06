@@ -1,6 +1,6 @@
 use std::{
     env,
-    fs::{ File, DirBuilder },
+    fs::{DirBuilder, File},
     io::{Read, Write},
     vec,
 };
@@ -11,9 +11,7 @@ const DATABASE_NAME: &str = "todo-list.txt";
 
 fn get_database() -> String {
     let database_location = env::var("TODO_DB").unwrap_or_else(|_| {
-
         let db_base_path = if cfg!(target_os = "windows") {
-
             let mut windows_app_data_path = env::var("AppData").unwrap_or_default();
 
             windows_app_data_path = windows_app_data_path + "/.terminal-todo";
@@ -23,9 +21,8 @@ fn get_database() -> String {
                 .create(&windows_app_data_path)
                 .expect("Could not create DB directory path");
 
-            windows_app_data_path 
+            windows_app_data_path
         } else {
-            
             let mut unix_home_path = env::var("HOME").unwrap_or_default();
 
             unix_home_path = unix_home_path + "/.terminal-todo";
@@ -37,10 +34,10 @@ fn get_database() -> String {
 
             unix_home_path
         };
-        
-            db_base_path
+
+        db_base_path
     });
-    
+
     format!("{}/{}", database_location, DATABASE_NAME)
 }
 

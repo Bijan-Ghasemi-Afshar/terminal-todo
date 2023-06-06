@@ -18,10 +18,10 @@ pub struct Action {
     pub name: &'static str,
     pub requires_arguments: bool,
     pub arguments: Vec<String>,
-    pub operation: fn(Vec<String>) -> (),
+    pub operation: fn(Vec<String>) -> Result<(), &'static str>,
 }
 
-fn list_operation(_: Vec<String>) {
+fn list_operation(_: Vec<String>) -> Result<(), &'static str> {
     println!("Printing all ToDo items");
     let todos: Vec<ToDo> = database::read_items();
 
@@ -31,9 +31,11 @@ fn list_operation(_: Vec<String>) {
             index + 1
         )
     });
+
+    Ok(())
 }
 
-fn create_operation(_: Vec<String>) {
+fn create_operation(_: Vec<String>) -> Result<(), &'static str> {
     println!("Creating a ToDo item");
 
     print!("Title: ");
@@ -49,22 +51,35 @@ fn create_operation(_: Vec<String>) {
     let todo: ToDo = ToDo::new(title, description);
 
     database::store_item(todo);
+
+    Ok(())
 }
 
-fn edit_operation(args: Vec<String>) {
-    let item_index: usize = args
-        .get(0)
-        .unwrap()
-        .parse::<usize>()
-        .expect("Given ToDo Item index is wrong")
-        - 1;
+fn get_item_index_arg(args: Vec<String>) -> Result<usize, &'static str> {
+    match args.get(0) {
+        Some(arg) => match arg.parse::<usize>() {
+            Ok(index) => {
+                if index == 0 {
+                    return Err("Given argument should be a positive number");
+                }
+                return Ok(index - 1);
+            }
+            Err(_) => return Err("Given argument should be a positive number"),
+        },
+        None => return Err("Could not get passed argument"),
+    };
+}
+
+fn edit_operation(args: Vec<String>) -> Result<(), &'static str> {
+    let item_index: usize = get_item_index_arg(args)?;
 
     println!("Editing #{} ToDo item", item_index + 1);
     let mut todos: Vec<ToDo> = database::read_items();
 
-    let mut edit_todo = todos
-        .get_mut(item_index)
-        .expect("Given ToDo Item index is wrong");
+    let mut edit_todo = match todos.get_mut(item_index) {
+        Some(todo) => todo,
+        None => return Err("Given ToDo Item index is wrong"),
+    };
 
     println!("{edit_todo}");
 
@@ -79,7 +94,7 @@ fn edit_operation(args: Vec<String>) {
     io::stdin().read_line(&mut new_description).unwrap();
 
     if new_title.len() > 1 {
-       edit_todo.title = new_title;
+        edit_todo.title = new_title;
     }
 
     if new_description.len() > 1 {
@@ -88,46 +103,45 @@ fn edit_operation(args: Vec<String>) {
 
     database::store_existing_items(todos);
 
-    println!("Updated the database");
+    Ok(())
 }
 
-fn update_todo_status(args: Vec<String>, status: String) {
-    let item_index: usize = args
-        .get(0)
-        .unwrap()
-        .parse::<usize>()
-        .expect("Given ToDo Item index is wrong")
-        - 1;
+fn update_todo_status(args: Vec<String>, status: String) -> Result<(), &'static str> {
+    let item_index: usize = get_item_index_arg(args)?;
+
     println!("Editing #{} ToDo item", item_index + 1);
     let mut todos: Vec<ToDo> = database::read_items();
 
-    let mut edit_todo = todos
-        .get_mut(item_index)
-        .expect("Given ToDo Item index is wrong");
-
+    let mut edit_todo = match todos.get_mut(item_index) {
+        Some(todo) => todo,
+        None => return Err("Given ToDo Item index is wrong"),
+    };
 
     edit_todo.done = status;
-    
+
     database::store_existing_items(todos);
+
+    Ok(())
 }
 
-fn done_operation(args: Vec<String>) {
-    update_todo_status(args, "✅".into())
+fn done_operation(args: Vec<String>) -> Result<(), &'static str> {
+    update_todo_status(args, "✅".into())?;
+    Ok(())
 }
 
-fn undone_operation(args: Vec<String>) {
-    update_todo_status(args, "❌".into())
+fn undone_operation(args: Vec<String>) -> Result<(), &'static str> {
+    update_todo_status(args, "❌".into())?;
+    Ok(())
 }
 
-fn delete_operation(args: Vec<String>) {
+fn delete_operation(args: Vec<String>) -> Result<(), &'static str> {
+    let item_index: usize = get_item_index_arg(args)?;
+
     let mut todos: Vec<ToDo> = database::read_items();
-    
-    let item_index: usize = args
-        .get(0)
-        .unwrap()
-        .parse::<usize>()
-        .expect("Given ToDo Item index is wrong")
-        - 1;
+
+    if item_index >= todos.len() || item_index <= 0 {
+        return Err("Given item index is wrong");
+    }
 
     println!("Deleting #{} ToDo item", item_index + 1);
 
@@ -135,7 +149,7 @@ fn delete_operation(args: Vec<String>) {
 
     database::store_existing_items(todos);
 
-    println!("Updated the database");
+    Ok(())
 }
 
 pub const ACTIONS: [Action; 6] = [
@@ -183,7 +197,7 @@ impl Action {
         mut logger: L,
     ) -> Result<Self, &'static str> {
         if user_input.len() < 2 {
-            return Err("An action needs to be provided [create, list]");
+            return Err("An action needs to be provided\ncreate\nlist\nedit [index]\ndone [index]\nundone [index]\ndelete [index]");
         }
 
         // Skipping the first arg since it the program name
@@ -207,7 +221,7 @@ impl Action {
                 return Ok(action);
             }
         }
-        Err("Operation is not valid.\n[create, list]")
+        Err("An action needs to be provided\ncreate\nlist\nedit [index]\ndone [index]\nundone [index]\ndelete [index]")
     }
 
     fn validate_arguments<'a, T, L: Logger>(
@@ -260,7 +274,9 @@ mod tests {
     use super::*;
     use crate::error_logger::ErrorLogger;
 
-    fn empty_func(_: Vec<String>) {}
+    fn empty_func(_: Vec<String>) -> Result<(), &'static str> {
+        Ok(())
+    }
 
     #[test]
     fn validates_operation_correctly() {

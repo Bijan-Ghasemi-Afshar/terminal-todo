@@ -9,17 +9,20 @@ use crate::todo::ToDo;
 
 const DATABASE_NAME: &str = "todo-list.txt";
 
-fn get_database() -> String {
+fn get_database() -> Result<String, &'static str> {
     let database_location = env::var("TODO_DB").unwrap_or_else(|_| {
         let db_base_path = if cfg!(target_os = "windows") {
             let mut windows_app_data_path = env::var("AppData").unwrap_or_default();
 
             windows_app_data_path = windows_app_data_path + "/.terminal-todo";
 
-            DirBuilder::new()
+            let dir_build_res = DirBuilder::new()
                 .recursive(true)
-                .create(&windows_app_data_path)
-                .expect("Could not create DB directory path");
+                .create(&windows_app_data_path);
+
+            if let Err(_) = dir_build_res {
+                return "Could not create DB directory path".into()
+            }
 
             windows_app_data_path
         } else {
@@ -27,22 +30,25 @@ fn get_database() -> String {
 
             unix_home_path = unix_home_path + "/.terminal-todo";
 
-            DirBuilder::new()
+            let dir_build_res = DirBuilder::new()
                 .recursive(true)
-                .create(&unix_home_path)
-                .expect("Could not create DB directory path");
+                .create(&unix_home_path);
 
+            if let Err(_) = dir_build_res {
+                return "Could not create DB directory path".into()
+            }
+            
             unix_home_path
         };
 
         db_base_path
     });
 
-    format!("{}/{}", database_location, DATABASE_NAME)
+    Ok(format!("{}/{}", database_location, DATABASE_NAME))
 }
 
-pub fn store_item(todo: ToDo) {
-    let db = get_database();
+pub fn store_item(todo: ToDo) -> Result<(), &'static str> {
+    let db = get_database()?;
 
     let mut database: File = File::options()
         .append(true)
@@ -55,10 +61,12 @@ pub fn store_item(todo: ToDo) {
         .expect("Error storing ToDo item");
 
     println!("Item added to the database");
+
+    Ok(())
 }
 
-pub fn store_existing_items(todos: Vec<ToDo>) {
-    let db = get_database();
+pub fn store_existing_items(todos: Vec<ToDo>) -> Result<(), &'static str> {
+    let db = get_database()?;
 
     let mut database: File = File::options()
         .write(true)
@@ -78,10 +86,12 @@ pub fn store_existing_items(todos: Vec<ToDo>) {
     database
         .write(&serialised_todos.as_bytes())
         .expect("Error storing ToDo item");
+
+    Ok(())
 }
 
-pub fn read_items() -> Vec<ToDo> {
-    let db = get_database();
+pub fn read_items() -> Result<Vec<ToDo>, &'static str> {
+    let db = get_database()?;
 
     let mut database: File = File::options()
         .write(true)
@@ -101,5 +111,5 @@ pub fn read_items() -> Vec<ToDo> {
         todo_items.push(ToDo::deserialise(todo_serialised));
     }
 
-    todo_items
+    Ok(todo_items)
 }

@@ -23,7 +23,7 @@ pub struct Action {
 
 fn list_operation(_: Vec<String>) -> Result<(), &'static str> {
     println!("Printing all ToDo items");
-    let todos: Vec<ToDo> = database::read_items();
+    let todos: Vec<ToDo> = database::read_items()?;
 
     todos.iter().enumerate().for_each(|(index, todo)| {
         println!(
@@ -50,7 +50,7 @@ fn create_operation(_: Vec<String>) -> Result<(), &'static str> {
 
     let todo: ToDo = ToDo::new(title, description);
 
-    database::store_item(todo);
+    database::store_item(todo)?;
 
     Ok(())
 }
@@ -74,7 +74,7 @@ fn edit_operation(args: Vec<String>) -> Result<(), &'static str> {
     let item_index: usize = get_item_index_arg(args)?;
 
     println!("Editing #{} ToDo item", item_index + 1);
-    let mut todos: Vec<ToDo> = database::read_items();
+    let mut todos: Vec<ToDo> = database::read_items()?;
 
     let mut edit_todo = match todos.get_mut(item_index) {
         Some(todo) => todo,
@@ -101,7 +101,7 @@ fn edit_operation(args: Vec<String>) -> Result<(), &'static str> {
         edit_todo.description = new_description;
     }
 
-    database::store_existing_items(todos);
+    database::store_existing_items(todos)?;
 
     Ok(())
 }
@@ -110,7 +110,7 @@ fn update_todo_status(args: Vec<String>, status: String) -> Result<(), &'static 
     let item_index: usize = get_item_index_arg(args)?;
 
     println!("Editing #{} ToDo item", item_index + 1);
-    let mut todos: Vec<ToDo> = database::read_items();
+    let mut todos: Vec<ToDo> = database::read_items()?;
 
     let mut edit_todo = match todos.get_mut(item_index) {
         Some(todo) => todo,
@@ -119,7 +119,7 @@ fn update_todo_status(args: Vec<String>, status: String) -> Result<(), &'static 
 
     edit_todo.done = status;
 
-    database::store_existing_items(todos);
+    database::store_existing_items(todos)?;
 
     Ok(())
 }
@@ -137,7 +137,7 @@ fn undone_operation(args: Vec<String>) -> Result<(), &'static str> {
 fn delete_operation(args: Vec<String>) -> Result<(), &'static str> {
     let item_index: usize = get_item_index_arg(args)?;
 
-    let mut todos: Vec<ToDo> = database::read_items();
+    let mut todos: Vec<ToDo> = database::read_items()?;
 
     if item_index >= todos.len() || item_index <= 0 {
         return Err("Given item index is wrong");
@@ -147,7 +147,7 @@ fn delete_operation(args: Vec<String>) -> Result<(), &'static str> {
 
     todos.remove(item_index);
 
-    database::store_existing_items(todos);
+    database::store_existing_items(todos)?;
 
     Ok(())
 }

@@ -20,7 +20,7 @@ impl ToDo {
         let props: Vec<&str> = todo_str.split(',').collect();
 
         if props.len() != 3 {
-            return Err("Database is corrupted, could not read data")
+            return Err("Database is corrupted, could not read data");
         }
 
         Ok(ToDo {
@@ -52,7 +52,6 @@ impl Display for ToDo {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -63,21 +62,19 @@ mod tests {
 
         let serialised_todo: String = todo.serialise();
         let expected: String = "title,description,❌\n".into();
-        assert_eq!(
-            serialised_todo,
-            expected
-        );
+        assert_eq!(serialised_todo, expected);
     }
 
     #[test]
     fn should_deserialise_properly() {
         let serialised_todo: &str = "title,description,✅";
         let deserialised_todo = ToDo::deserialise(serialised_todo).unwrap();
-        let expected_todo: ToDo = ToDo { title: "title".into(), description: "description".into(), done: "✅".into() };
-        assert_eq!(
-            expected_todo,
-            deserialised_todo,
-        );
+        let expected_todo: ToDo = ToDo {
+            title: "title".into(),
+            description: "description".into(),
+            done: "✅".into(),
+        };
+        assert_eq!(expected_todo, deserialised_todo,);
     }
 
     #[test]
@@ -86,13 +83,9 @@ mod tests {
         let deserialised_todo = ToDo::deserialise(corrupted_serialised_todo);
         if let Err(err) = deserialised_todo {
             let expected_todo = "Database is corrupted, could not read data";
-            assert_eq!(
-                expected_todo,
-                err
-            );
+            assert_eq!(expected_todo, err);
         } else {
             assert!(false);
         }
     }
 }
-

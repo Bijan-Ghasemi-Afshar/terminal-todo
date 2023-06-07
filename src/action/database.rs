@@ -21,7 +21,7 @@ fn get_database() -> Result<String, &'static str> {
                 .create(&windows_app_data_path);
 
             if let Err(_) = dir_build_res {
-                return "Could not create DB directory path".into()
+                return "Could not create DB directory path".into();
             }
 
             windows_app_data_path
@@ -30,14 +30,12 @@ fn get_database() -> Result<String, &'static str> {
 
             unix_home_path = unix_home_path + "/.terminal-todo";
 
-            let dir_build_res = DirBuilder::new()
-                .recursive(true)
-                .create(&unix_home_path);
+            let dir_build_res = DirBuilder::new().recursive(true).create(&unix_home_path);
 
             if let Err(_) = dir_build_res {
-                return "Could not create DB directory path".into()
+                return "Could not create DB directory path".into();
             }
-            
+
             unix_home_path
         };
 

@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ToDo {
     pub title: String,
     pub description: String,
@@ -16,14 +16,18 @@ impl ToDo {
         }
     }
 
-    pub fn deserialise(todo_str: &str) -> Self {
+    pub fn deserialise(todo_str: &str) -> Result<Self, &'static str> {
         let props: Vec<&str> = todo_str.split(',').collect();
 
-        ToDo {
+        if props.len() != 3 {
+            return Err("Database is corrupted, could not read data")
+        }
+
+        Ok(ToDo {
             title: props.get(0).unwrap().to_string(),
             description: props.get(1).unwrap().to_string(),
             done: props.get(2).unwrap().to_string(),
-        }
+        })
     }
 
     pub fn serialise(&self) -> String {
@@ -47,3 +51,48 @@ impl Display for ToDo {
         )
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_serialise_properly() {
+        let todo: ToDo = ToDo::new("title".into(), "description".into());
+
+        let serialised_todo: String = todo.serialise();
+        let expected: String = "title,description,❌\n".into();
+        assert_eq!(
+            serialised_todo,
+            expected
+        );
+    }
+
+    #[test]
+    fn should_deserialise_properly() {
+        let serialised_todo: &str = "title,description,✅";
+        let deserialised_todo = ToDo::deserialise(serialised_todo).unwrap();
+        let expected_todo: ToDo = ToDo { title: "title".into(), description: "description".into(), done: "✅".into() };
+        assert_eq!(
+            expected_todo,
+            deserialised_todo,
+        );
+    }
+
+    #[test]
+    fn should_handle_error_peroperly_when_deserialising() {
+        let corrupted_serialised_todo: &str = "fsjl,dsj";
+        let deserialised_todo = ToDo::deserialise(corrupted_serialised_todo);
+        if let Err(err) = deserialised_todo {
+            let expected_todo = "Database is corrupted, could not read data";
+            assert_eq!(
+                expected_todo,
+                err
+            );
+        } else {
+            assert!(false);
+        }
+    }
+}
+

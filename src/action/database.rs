@@ -108,7 +108,7 @@ pub fn read_items() -> Result<Vec<ToDo>, &'static str> {
         .expect("Error reading the database content");
 
     for todo_serialised in db_content.lines() {
-        todo_items.push(ToDo::deserialise(todo_serialised));
+        todo_items.push(ToDo::deserialise(todo_serialised)?);
     }
 
     Ok(todo_items)

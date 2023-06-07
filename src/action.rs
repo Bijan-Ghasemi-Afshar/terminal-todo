@@ -288,7 +288,7 @@ mod tests {
     fn returns_error_if_operation_in_invalid() {
         assert_eq!(
             Action::validate_operation("invalid".into()),
-            Err("Operation is not valid.\n[create, list]")
+            Err("An action needs to be provided\ncreate\nlist\nedit [index]\ndone [index]\nundone [index]\ndelete [index]")
         );
     }
 

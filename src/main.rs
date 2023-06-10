@@ -14,7 +14,7 @@ fn main() {
             process::exit(1);
         });
 
-    (valid_action.operation)(valid_action.arguments).unwrap_or_else(|err| {
+    (valid_action.execute)(valid_action.arguments).unwrap_or_else(|err| {
         eprintln!("{err}");
         process::exit(1);
     });

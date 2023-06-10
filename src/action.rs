@@ -16,20 +16,20 @@ pub struct Action {
     pub name: &'static str,
     pub requires_arguments: bool,
     pub arguments: Vec<String>,
-    pub operation: fn(Vec<String>) -> Result<(), &'static str>,
+    pub execute: fn(Vec<String>) -> Result<(), &'static str>,
 }
 
 impl Display for Action {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Operation: {}\nRequired Arguments: {:?}\nArguments{:?}",
+            "Action: {}\nRequired Arguments: {:?}\nArguments{:?}",
             self.name, self.requires_arguments, self.arguments
         )
     }
 }
 
-fn list_operation(_: Vec<String>) -> Result<(), &'static str> {
+fn list(_: Vec<String>) -> Result<(), &'static str> {
     println!("Printing all ToDo items");
     let todos: Vec<ToDo> = database::read_items()?;
 
@@ -43,7 +43,7 @@ fn list_operation(_: Vec<String>) -> Result<(), &'static str> {
     Ok(())
 }
 
-fn create_operation(_: Vec<String>) -> Result<(), &'static str> {
+fn create(_: Vec<String>) -> Result<(), &'static str> {
     println!("Creating a ToDo item");
 
     print!("Title: ");
@@ -78,7 +78,7 @@ fn get_item_index_arg(args: Vec<String>) -> Result<usize, &'static str> {
     };
 }
 
-fn edit_operation(args: Vec<String>) -> Result<(), &'static str> {
+fn edit(args: Vec<String>) -> Result<(), &'static str> {
     let item_index: usize = get_item_index_arg(args)?;
 
     println!("Editing #{} ToDo item", item_index + 1);
@@ -132,17 +132,17 @@ fn update_todo_status(args: Vec<String>, status: String) -> Result<(), &'static 
     Ok(())
 }
 
-fn done_operation(args: Vec<String>) -> Result<(), &'static str> {
+fn done(args: Vec<String>) -> Result<(), &'static str> {
     update_todo_status(args, "✅".into())?;
     Ok(())
 }
 
-fn undone_operation(args: Vec<String>) -> Result<(), &'static str> {
+fn undone(args: Vec<String>) -> Result<(), &'static str> {
     update_todo_status(args, "❌".into())?;
     Ok(())
 }
 
-fn delete_operation(args: Vec<String>) -> Result<(), &'static str> {
+fn delete(args: Vec<String>) -> Result<(), &'static str> {
     let item_index: usize = get_item_index_arg(args)?;
 
     let mut todos: Vec<ToDo> = database::read_items()?;
@@ -165,36 +165,36 @@ pub const ACTIONS: [Action; 6] = [
         name: CREATE,
         requires_arguments: false,
         arguments: vec![],
-        operation: create_operation,
+        execute: create,
     },
     Action {
         name: LIST,
         requires_arguments: false,
         arguments: vec![],
-        operation: list_operation,
+        execute: list,
     },
     Action {
         name: EDIT,
         requires_arguments: true,
         arguments: vec![],
-        operation: edit_operation,
+        execute: edit,
     },
     Action {
         name: DONE,
         requires_arguments: true,
         arguments: vec![],
-        operation: done_operation,
+        execute: done,
     },
     Action {
         name: UNDONE,
         requires_arguments: true,
         arguments: vec![],
-        operation: undone_operation,
+        execute: undone,
     },
     Action {
         name: DELETE,
         requires_arguments: true,
         arguments: vec![],
-        operation: delete_operation,
+        execute: delete,
     },
 ];

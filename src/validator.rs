@@ -18,21 +18,21 @@ impl Validator {
         // Skipping the first arg since it the program name
         user_input.next();
 
-        // Get the operation
+        // Get the action
         let valid_action: Action = match user_input.next() {
-            Some(op) => Validator::validate_operation(op)?,
+            Some(op) => Validator::validate_action(op)?,
             None => return Err("Error parsing action"),
         };
 
-        // Get the operation arguments
+        // Get the action arguments
         let valid_action = Validator::validate_arguments(user_input, valid_action, &mut logger)?;
 
         Ok(valid_action)
     }
 
-    fn validate_operation(operation: String) -> Result<Action, &'static str> {
+    fn validate_action(action_name: String) -> Result<Action, &'static str> {
         for action in ACTIONS {
-            if action.name == operation {
+            if action.name == action_name {
                 return Ok(action);
             }
         }
@@ -54,10 +54,10 @@ impl Validator {
         }
 
         match valid_action.requires_arguments {
-            x if x && arguments.len() <= 0 => return Err("Operation requires arguments"),
+            x if x && arguments.len() <= 0 => return Err("action requires arguments"),
             x if !x && arguments.len() > 0 => {
                 err_logger
-                    .log(&"Operation does not take arguments")
+                    .log(&"action does not take arguments")
                     .unwrap();
                 Ok(Action {
                     arguments,
@@ -84,15 +84,15 @@ mod tests {
     }
 
     #[test]
-    fn validates_operation_correctly() {
-        let valid_action = Validator::validate_operation("create".into());
+    fn validates_action_correctly() {
+        let valid_action = Validator::validate_action("create".into());
         assert!(valid_action.is_ok());
     }
 
     #[test]
-    fn returns_error_if_operation_in_invalid() {
+    fn returns_error_if_action_in_invalid() {
         assert_eq!(
-            Validator::validate_operation("invalid".into()),
+            Validator::validate_action("invalid".into()),
             Err("An action needs to be provided\ncreate\nlist\nedit [index]\ndone [index]\nundone [index]\ndelete [index]")
         );
     }
@@ -103,7 +103,7 @@ mod tests {
             name: "list",
             requires_arguments: true,
             arguments: vec![],
-            operation: empty_func,
+            execute: empty_func,
         };
 
         let mut err_logger = ErrorLogger::new(Box::new(vec![]));
@@ -122,7 +122,7 @@ mod tests {
             name: "list",
             requires_arguments: true,
             arguments: vec![],
-            operation: empty_func,
+            execute: empty_func,
         };
 
         let mut err_logger = ErrorLogger::new(Box::new(vec![]));
@@ -133,7 +133,7 @@ mod tests {
                 action_with_no_required_args,
                 &mut err_logger
             ),
-            Err("Operation requires arguments"),
+            Err("action requires arguments"),
         );
     }
 
@@ -157,7 +157,7 @@ mod tests {
             name: "create",
             requires_arguments: false,
             arguments: vec![],
-            operation: empty_func,
+            execute: empty_func,
         };
         let args = vec![String::from("test"), String::from("test")];
 

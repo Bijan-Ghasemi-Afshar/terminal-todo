@@ -6,11 +6,11 @@ use std::env::Args;
 
 pub struct Validator {}
 
-impl Validator {
-    pub fn validate_input<L: Logger>(
+impl<'a> Validator {
+    pub fn validate_input<L: Logger + 'a>(
         mut user_input: Args,
-        mut logger: L,
-    ) -> Result<Action, &'static str> {
+        logger: &'a mut L,
+    ) -> Result<Action<'a>, &'static str> {
         if user_input.len() < 2 {
             return Err("An action needs to be provided\ncreate\nlist\nedit [index]\ndone [index]\nundone [index]\ndelete [index]");
         }
@@ -25,12 +25,15 @@ impl Validator {
         };
 
         // Get the action arguments
-        let valid_action = Validator::validate_arguments(user_input, valid_action, &mut logger)?;
+        let mut valid_action = Validator::validate_arguments(user_input, valid_action, logger)?;
+
+        // Assign error logger to logger for action
+        valid_action.error_logger = Some(logger);
 
         Ok(valid_action)
     }
 
-    fn validate_action(action_name: String) -> Result<Action, &'static str> {
+    fn validate_action(action_name: String) -> Result<Action<'a>, &'static str> {
         for action in ACTIONS {
             if action.name == action_name {
                 return Ok(action);
@@ -39,11 +42,11 @@ impl Validator {
         Err("An action needs to be provided\ncreate\nlist\nedit [index]\ndone [index]\nundone [index]\ndelete [index]")
     }
 
-    fn validate_arguments<'a, T, L: Logger>(
+    fn validate_arguments<'b, T, L: Logger>(
         mut user_args: T,
-        valid_action: Action,
+        valid_action: Action<'a>,
         err_logger: &mut L,
-    ) -> Result<Action, &'static str>
+    ) -> Result<Action<'a>, &'static str>
     where
         T: Iterator<Item = String>,
     {

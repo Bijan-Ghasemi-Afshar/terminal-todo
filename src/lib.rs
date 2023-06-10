@@ -1,4 +1,4 @@
 pub mod action;
-pub mod error_logger;
+pub mod log_wrapper;
 pub mod todo;
 pub mod validator;

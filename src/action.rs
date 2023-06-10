@@ -1,4 +1,4 @@
-use crate::{todo::ToDo, error_logger::Logger};
+use crate::{log_wrapper::Logger, todo::ToDo};
 use std::fmt::Display;
 use std::io::{self, stdout, Write};
 
@@ -180,7 +180,7 @@ pub const ACTIONS: [Action; 6] = [
         name: EDIT,
         requires_arguments: true,
         arguments: vec![],
-        error_logger:None,
+        error_logger: None,
         execute: edit,
     },
     Action {

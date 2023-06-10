@@ -1,6 +1,6 @@
 use crate::{
     action::{Action, ACTIONS},
-    error_logger::Logger,
+    log_wrapper::Logger,
 };
 use std::env::Args;
 
@@ -59,9 +59,7 @@ impl<'a> Validator {
         match valid_action.requires_arguments {
             x if x && arguments.len() <= 0 => return Err("action requires arguments"),
             x if !x && arguments.len() > 0 => {
-                err_logger
-                    .log(&"action does not take arguments")
-                    .unwrap();
+                err_logger.log_err(&"action does not take arguments").unwrap();
                 Ok(Action {
                     arguments,
                     ..valid_action

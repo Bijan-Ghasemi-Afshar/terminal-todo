@@ -1,15 +1,15 @@
 use std::{
     env,
-    io::{self, Stderr},
+    io::{self, Stderr, Stdout},
     process,
 };
-use terminal_todo::{action::Action, error_logger::ErrorLogger, validator::Validator};
+use terminal_todo::{action::Action, log_wrapper::LogWrapper, validator::Validator};
 
 fn main() {
-    let mut error_logger: ErrorLogger<Stderr> = ErrorLogger::new(io::stderr());
+    let mut logger: LogWrapper<Stderr, Stdout> = LogWrapper::new(io::stderr(), io::stdout());
 
-    let valid_action: Action =
-        Validator::validate_input(env::args(), &mut error_logger).unwrap_or_else(|err| {
+    let valid_action: Action = Validator::validate_input(env::args(), &mut logger)
+        .unwrap_or_else(|err| {
             eprintln!("{err}");
             process::exit(1);
         });

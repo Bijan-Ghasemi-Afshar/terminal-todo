@@ -1,4 +1,4 @@
-use crate::todo::ToDo;
+use crate::{todo::ToDo, error_logger::Logger};
 use std::fmt::Display;
 use std::io::{self, stdout, Write};
 
@@ -11,15 +11,16 @@ const DONE: &'static str = "done";
 const UNDONE: &'static str = "undone";
 const DELETE: &'static str = "delete";
 
-#[derive(PartialEq, Debug)]
-pub struct Action {
+/* #[derive(PartialEq, Debug)] */
+pub struct Action<'a> {
     pub name: &'static str,
     pub requires_arguments: bool,
     pub arguments: Vec<String>,
+    pub error_logger: Option<&'a dyn Logger>,
     pub execute: fn(Vec<String>) -> Result<(), &'static str>,
 }
 
-impl Display for Action {
+impl Display for Action<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -165,36 +166,42 @@ pub const ACTIONS: [Action; 6] = [
         name: CREATE,
         requires_arguments: false,
         arguments: vec![],
+        error_logger: None,
         execute: create,
     },
     Action {
         name: LIST,
         requires_arguments: false,
         arguments: vec![],
+        error_logger: None,
         execute: list,
     },
     Action {
         name: EDIT,
         requires_arguments: true,
         arguments: vec![],
+        error_logger:None,
         execute: edit,
     },
     Action {
         name: DONE,
         requires_arguments: true,
         arguments: vec![],
+        error_logger: None,
         execute: done,
     },
     Action {
         name: UNDONE,
         requires_arguments: true,
         arguments: vec![],
+        error_logger: None,
         execute: undone,
     },
     Action {
         name: DELETE,
         requires_arguments: true,
         arguments: vec![],
+        error_logger: None,
         execute: delete,
     },
 ];

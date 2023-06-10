@@ -6,10 +6,10 @@ use std::{
 use terminal_todo::{action::Action, error_logger::ErrorLogger, validator::Validator};
 
 fn main() {
-    let error_logger: ErrorLogger<Stderr> = ErrorLogger::new(io::stderr());
+    let mut error_logger: ErrorLogger<Stderr> = ErrorLogger::new(io::stderr());
 
     let valid_action: Action =
-        Validator::validate_input(env::args(), error_logger).unwrap_or_else(|err| {
+        Validator::validate_input(env::args(), &mut error_logger).unwrap_or_else(|err| {
             eprintln!("{err}");
             process::exit(1);
         });

@@ -2,6 +2,7 @@ use std::{error::Error, io::Write};
 
 pub trait Logger {
     fn log_err<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn Error>>;
+    fn log_std<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn Error>>;
 }
 
 pub struct LogWrapper<ERR_W, STD_W>
@@ -33,6 +34,10 @@ where
 {
     fn log_err<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn Error>> {
         writeln!(self.err_writer, "{}", &msg)?;
+        Ok(())
+    }
+    fn log_std<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn Error>> {
+        writeln!(self.std_writer, "{}", &msg)?;
         Ok(())
     }
 }

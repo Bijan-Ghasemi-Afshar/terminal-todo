@@ -44,6 +44,18 @@ pub struct Action<'a> {
 }
 
 impl Action<'_> {
+    pub fn new(action_type: &str) -> Result<Self, &'static str> {
+        let act_type = ActionType::new(action_type)?;
+
+        Ok(Action {
+            action_type: act_type,
+            name: "random",
+            requires_arguments: false,
+            arguments: vec![],
+            error_logger: None,
+        })
+    }
+
     pub fn execute_action(self) -> Result<(), &'static str> {
         match self.action_type {
             ActionType::Create => self.create(),
@@ -51,7 +63,7 @@ impl Action<'_> {
             ActionType::Edit => self.edit(),
             ActionType::Done => self.done(),
             ActionType::Undone => self.undone(),
-            ActionType::Delete => Ok(()),
+            ActionType::Delete => self.delete(),
         }
     }
 

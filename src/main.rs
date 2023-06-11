@@ -8,8 +8,8 @@ use terminal_todo::{action::Action, log_wrapper::LogWrapper, validator::Validato
 fn main() {
     let mut logger: LogWrapper<Stderr, Stdout> = LogWrapper::new(io::stderr(), io::stdout());
 
-    let valid_action: Action = Validator::validate_input(env::args(), &mut logger)
-        .unwrap_or_else(|err| {
+    let valid_action: Action =
+        Validator::validate_input(env::args(), &mut logger).unwrap_or_else(|err| {
             eprintln!("{err}");
             process::exit(1);
         });

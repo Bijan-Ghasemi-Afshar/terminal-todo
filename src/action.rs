@@ -4,13 +4,6 @@ use std::io::{self, stdout, Write};
 
 pub mod database;
 
-const CREATE: &'static str = "create";
-const LIST: &'static str = "list";
-const EDIT: &'static str = "edit";
-const DONE: &'static str = "done";
-const UNDONE: &'static str = "undone";
-const DELETE: &'static str = "delete";
-
 pub enum ActionType {
     Create,
     List,
@@ -37,19 +30,17 @@ impl ActionType {
 /* #[derive(PartialEq, Debug)] */
 pub struct Action<'a> {
     pub action_type: ActionType,
-    pub name: &'static str,
     pub requires_arguments: bool,
     pub arguments: Vec<String>,
     pub error_logger: Option<&'a dyn Logger>,
 }
 
 impl Action<'_> {
-    pub fn new(action_type: &str) -> Result<Self, &'static str> {
+    pub fn new(action_type: &str, ) -> Result<Self, &'static str> {
         let act_type = ActionType::new(action_type)?;
 
         Ok(Action {
             action_type: act_type,
-            name: "random",
             requires_arguments: false,
             arguments: vec![],
             error_logger: None,
@@ -203,53 +194,8 @@ impl Display for Action<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Action: {}\nRequired Arguments: {:?}\nArguments{:?}",
-            self.name, self.requires_arguments, self.arguments
+            "Action:\nRequired Arguments: {:?}\nArguments{:?}",
+            self.requires_arguments, self.arguments
         )
     }
 }
-
-pub const ACTIONS: [Action; 6] = [
-    Action {
-        action_type: ActionType::Create,
-        name: CREATE,
-        requires_arguments: false,
-        arguments: vec![],
-        error_logger: None,
-    },
-    Action {
-        action_type: ActionType::List,
-        name: LIST,
-        requires_arguments: false,
-        arguments: vec![],
-        error_logger: None,
-    },
-    Action {
-        action_type: ActionType::Edit,
-        name: EDIT,
-        requires_arguments: true,
-        arguments: vec![],
-        error_logger: None,
-    },
-    Action {
-        action_type: ActionType::Done,
-        name: DONE,
-        requires_arguments: true,
-        arguments: vec![],
-        error_logger: None,
-    },
-    Action {
-        action_type: ActionType::Undone,
-        name: UNDONE,
-        requires_arguments: true,
-        arguments: vec![],
-        error_logger: None,
-    },
-    Action {
-        action_type: ActionType::Delete,
-        name: DELETE,
-        requires_arguments: true,
-        arguments: vec![],
-        error_logger: None,
-    },
-];

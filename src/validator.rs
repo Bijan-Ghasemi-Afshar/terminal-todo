@@ -1,7 +1,4 @@
-use crate::{
-    action::{Action, ACTIONS},
-    log_wrapper::Logger,
-};
+use crate::{action::Action, log_wrapper::Logger};
 use std::env::Args;
 
 pub struct Validator {}
@@ -20,7 +17,8 @@ impl<'a> Validator {
 
         // Get the action
         let valid_action: Action = match user_input.next() {
-            Some(op) => Validator::validate_action(op)?,
+            // Some(op) => Validator::validate_action(op)?,
+            Some(op) => Action::new(&op)?,
             None => return Err("Error parsing action"),
         };
 
@@ -31,15 +29,6 @@ impl<'a> Validator {
         valid_action.error_logger = Some(logger);
 
         Ok(valid_action)
-    }
-
-    fn validate_action(action_name: String) -> Result<Action<'a>, &'static str> {
-        for action in ACTIONS {
-            if action.name == action_name {
-                return Ok(action);
-            }
-        }
-        Err("An action needs to be provided\ncreate\nlist\nedit [index]\ndone [index]\nundone [index]\ndelete [index]")
     }
 
     fn validate_arguments<'b, T, L: Logger>(

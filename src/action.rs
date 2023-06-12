@@ -5,24 +5,35 @@ use std::io::{self, stdout, Write};
 pub mod database;
 
 pub enum ActionType {
-    Create,
-    List,
-    Edit,
-    Done,
-    Undone,
-    Delete,
+    Create(bool),
+    List(bool),
+    Edit(bool),
+    Done(bool),
+    Undone(bool),
+    Delete(bool),
 }
 
 impl ActionType {
     pub fn new(action_name: &str) -> Result<Self, &'static str> {
         match action_name {
-            "create" => Ok(ActionType::Create),
-            "list" => Ok(ActionType::List),
-            "edit" => Ok(ActionType::Edit),
-            "done" => Ok(ActionType::Done),
-            "undone" => Ok(ActionType::Undone),
-            "delete" => Ok(ActionType::Delete),
+            "create" => Ok(ActionType::Create(false)),
+            "list" => Ok(ActionType::List(false)),
+            "edit" => Ok(ActionType::Edit(true)),
+            "done" => Ok(ActionType::Done(true)),
+            "undone" => Ok(ActionType::Undone(true)),
+            "delete" => Ok(ActionType::Delete(true)),
             _ => Err("Action is not valid"),
+        }
+    }
+
+    pub fn requires_arguments(&self) -> bool {
+        match self {
+            ActionType::Create(req_args) => *req_args,
+            ActionType::List(req_args) => *req_args,
+            ActionType::Edit(req_args) => *req_args,
+            ActionType::Done(req_args) => *req_args,
+            ActionType::Undone(req_args) => *req_args,
+            ActionType::Delete(req_args) => *req_args,
         }
     }
 }
@@ -38,10 +49,11 @@ pub struct Action<'a> {
 impl Action<'_> {
     pub fn new(action_type: &str, ) -> Result<Self, &'static str> {
         let act_type = ActionType::new(action_type)?;
+        let req_args = act_type.requires_arguments(); 
 
         Ok(Action {
             action_type: act_type,
-            requires_arguments: false,
+            requires_arguments: req_args,
             arguments: vec![],
             error_logger: None,
         })
@@ -49,12 +61,12 @@ impl Action<'_> {
 
     pub fn execute_action(self) -> Result<(), &'static str> {
         match self.action_type {
-            ActionType::Create => self.create(),
-            ActionType::List => self.list(),
-            ActionType::Edit => self.edit(),
-            ActionType::Done => self.done(),
-            ActionType::Undone => self.undone(),
-            ActionType::Delete => self.delete(),
+            ActionType::Create(_) => self.create(),
+            ActionType::List(_) => self.list(),
+            ActionType::Edit(_) => self.edit(),
+            ActionType::Done(_) => self.done(),
+            ActionType::Undone(_) => self.undone(),
+            ActionType::Delete(_) => self.delete(),
         }
     }
 

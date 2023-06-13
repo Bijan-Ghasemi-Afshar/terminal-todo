@@ -59,7 +59,7 @@ impl<'a> Action<'a> {
         })
     }
 
-    pub fn execute_action(self) -> Result<(), &'static str> {
+    pub fn execute_action(&mut self) -> Result<(), &'static str> {
         match self.action_type {
             ActionType::Create(_) => self.create(),
             ActionType::List(_) => self.list(),
@@ -70,8 +70,12 @@ impl<'a> Action<'a> {
         }
     }
 
-    fn list(self) -> Result<(), &'static str> {
-        println!("Printing all ToDo items");
+    fn list(&mut self) -> Result<(), &'static str> {
+        self.logger
+            .as_mut()
+            .unwrap()
+            .log_std(&"Printing all ToDo items.")
+            .unwrap();
         let todos: Vec<ToDo> = database::read_items()?;
 
         todos.iter().enumerate().for_each(|(index, todo)| {
@@ -84,15 +88,23 @@ impl<'a> Action<'a> {
         Ok(())
     }
 
-    fn create(self) -> Result<(), &'static str> {
-        println!("Creating a ToDo item");
+    fn create(&mut self) -> Result<(), &'static str> {
+        self.logger
+            .as_mut()
+            .unwrap()
+            .log_std(&"Creating a ToDo item")
+            .unwrap();
 
-        print!("Title: ");
+        self.logger.as_mut().unwrap().log_std(&"Title: ").unwrap();
         stdout().flush().unwrap();
         let mut title = String::new();
         io::stdin().read_line(&mut title).unwrap();
 
-        print!("Description: ");
+        self.logger
+            .as_mut()
+            .unwrap()
+            .log_std(&"Description: ")
+            .unwrap();
         stdout().flush().unwrap();
         let mut description = String::new();
         io::stdin().read_line(&mut description).unwrap();
@@ -104,7 +116,7 @@ impl<'a> Action<'a> {
         Ok(())
     }
 
-    fn edit(self) -> Result<(), &'static str> {
+    fn edit(&mut self) -> Result<(), &'static str> {
         let item_index: usize = self.get_item_index_arg()?;
 
         println!("Editing #{} ToDo item", item_index + 1);
@@ -117,12 +129,20 @@ impl<'a> Action<'a> {
 
         println!("{edit_todo}");
 
-        print!("New Title: ");
+        self.logger
+            .as_mut()
+            .unwrap()
+            .log_std(&"New Title: ")
+            .unwrap();
         stdout().flush().unwrap();
         let mut new_title = String::new();
         io::stdin().read_line(&mut new_title).unwrap();
 
-        print!("New Description: ");
+        self.logger
+            .as_mut()
+            .unwrap()
+            .log_std(&"New Description: ")
+            .unwrap();
         stdout().flush().unwrap();
         let mut new_description = String::new();
         io::stdin().read_line(&mut new_description).unwrap();
@@ -140,7 +160,7 @@ impl<'a> Action<'a> {
         Ok(())
     }
 
-    fn update_todo_status(self, status: String) -> Result<(), &'static str> {
+    fn update_todo_status(&mut self, status: String) -> Result<(), &'static str> {
         let item_index: usize = self.get_item_index_arg()?;
 
         println!("Editing #{} ToDo item", item_index + 1);
@@ -158,17 +178,17 @@ impl<'a> Action<'a> {
         Ok(())
     }
 
-    fn done(self) -> Result<(), &'static str> {
+    fn done(&mut self) -> Result<(), &'static str> {
         self.update_todo_status("✅".into())?;
         Ok(())
     }
 
-    fn undone(self) -> Result<(), &'static str> {
+    fn undone(&mut self) -> Result<(), &'static str> {
         self.update_todo_status("❌".into())?;
         Ok(())
     }
 
-    fn delete(self) -> Result<(), &'static str> {
+    fn delete(&mut self) -> Result<(), &'static str> {
         let item_index: usize = self.get_item_index_arg()?;
 
         let mut todos: Vec<ToDo> = database::read_items()?;
@@ -186,7 +206,7 @@ impl<'a> Action<'a> {
         Ok(())
     }
 
-    fn get_item_index_arg(self) -> Result<usize, &'static str> {
+    fn get_item_index_arg(&self) -> Result<usize, &'static str> {
         match self.arguments.get(0) {
             Some(arg) => match arg.parse::<usize>() {
                 Ok(index) => {

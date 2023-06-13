@@ -16,26 +16,21 @@ impl<'a> Validator {
         user_input.next();
 
         // Get the action
-        let valid_action: Action = match user_input.next() {
-            // Some(op) => Validator::validate_action(op)?,
-            Some(op) => Action::new(&op)?,
+        let mut valid_action: Action = match user_input.next() {
+            Some(op) => Action::new(&op, logger)?,
             None => return Err("Error parsing action"),
         };
 
         // Get the action arguments
-        let mut valid_action = Validator::validate_arguments(user_input, valid_action, logger)?;
-
-        // Assign error logger to logger for action
-        valid_action.error_logger = Some(logger);
+        Validator::validate_arguments::<Args, L>(user_input, &mut valid_action)?;
 
         Ok(valid_action)
     }
 
     fn validate_arguments<'b, T, L: Logger>(
         mut user_args: T,
-        valid_action: Action<'a>,
-        err_logger: &mut L,
-    ) -> Result<Action<'a>, &'static str>
+        valid_action: &mut Action<'a>,
+    ) -> Result<(), &'static str>
     where
         T: Iterator<Item = String>,
     {
@@ -46,20 +41,21 @@ impl<'a> Validator {
         }
 
         match valid_action.requires_arguments {
-            x if x && arguments.len() <= 0 => return Err("action requires arguments"),
+            x if x && arguments.len() <= 0 => return Err("Action requires arguments"),
             x if !x && arguments.len() > 0 => {
-                err_logger
-                    .log_err(&"action does not take arguments")
+                valid_action
+                    .logger
+                    .as_mut()
+                    .unwrap()
+                    .log_err(&"Action does not take arguments")
                     .unwrap();
-                Ok(Action {
-                    arguments,
-                    ..valid_action
-                })
+                valid_action.arguments = arguments;
+                Ok(())
             }
-            _ => Ok(Action {
-                arguments,
-                ..valid_action
-            }),
+            _ => {
+                valid_action.arguments = arguments;
+                Ok(())
+            }
         }
     }
 }

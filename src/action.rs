@@ -43,19 +43,19 @@ pub struct Action<'a> {
     pub action_type: ActionType,
     pub requires_arguments: bool,
     pub arguments: Vec<String>,
-    pub error_logger: Option<&'a dyn Logger>,
+    pub logger: Option<&'a mut dyn Logger>,
 }
 
-impl Action<'_> {
-    pub fn new(action_type: &str, ) -> Result<Self, &'static str> {
+impl<'a> Action<'a> {
+    pub fn new(action_type: &str, logger: &'a mut dyn Logger) -> Result<Self, &'static str> {
         let act_type = ActionType::new(action_type)?;
-        let req_args = act_type.requires_arguments(); 
+        let req_args = act_type.requires_arguments();
 
         Ok(Action {
             action_type: act_type,
             requires_arguments: req_args,
             arguments: vec![],
-            error_logger: None,
+            logger: Some(logger),
         })
     }
 

@@ -47,7 +47,7 @@ impl<'a> Validator {
                     .logger
                     .as_mut()
                     .unwrap()
-                    .log_err(&"Action does not take arguments")
+                    .log_errln(&"Action does not take arguments")
                     .unwrap();
                 valid_action.arguments = arguments;
                 Ok(())

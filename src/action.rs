@@ -74,7 +74,7 @@ impl<'a> Action<'a> {
         self.logger
             .as_mut()
             .unwrap()
-            .log_std(&"Printing all ToDo items.")
+            .log_stdln(&"Printing all ToDo items.")
             .unwrap();
         let todos: Vec<ToDo> = database::read_items()?;
 
@@ -92,7 +92,7 @@ impl<'a> Action<'a> {
         self.logger
             .as_mut()
             .unwrap()
-            .log_std(&"Creating a ToDo item")
+            .log_stdln(&"Creating a ToDo item")
             .unwrap();
 
         self.logger.as_mut().unwrap().log_std(&"Title: ").unwrap();

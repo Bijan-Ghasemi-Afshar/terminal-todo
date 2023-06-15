@@ -76,13 +76,18 @@ impl<'a> Action<'a> {
             .unwrap()
             .log_stdln(&"Printing all ToDo items.")
             .unwrap();
+
         let todos: Vec<ToDo> = database::read_items()?;
 
         todos.iter().enumerate().for_each(|(index, todo)| {
-            println!(
-                "===============\n# {}\n{todo}\n===============\n",
-                index + 1
-            )
+            self.logger
+                .as_mut()
+                .unwrap()
+                .log_stdln(&format!(
+                    "===============\n# {}\n{todo}\n===============\n",
+                    index + 1
+                ))
+                .unwrap();
         });
 
         Ok(())
@@ -119,7 +124,6 @@ impl<'a> Action<'a> {
     fn edit(&mut self) -> Result<(), &'static str> {
         let item_index: usize = self.get_item_index_arg()?;
 
-        println!("Editing #{} ToDo item", item_index + 1);
         let mut todos: Vec<ToDo> = database::read_items()?;
 
         let mut edit_todo = match todos.get_mut(item_index) {
@@ -127,13 +131,24 @@ impl<'a> Action<'a> {
             None => return Err("Given ToDo Item index is wrong"),
         };
 
-        println!("{edit_todo}");
+        self.logger
+            .as_mut()
+            .unwrap()
+            .log_stdln(&format!("Editing #{} ToDo item", item_index + 1))
+            .unwrap();
+
+        self.logger
+            .as_mut()
+            .unwrap()
+            .log_stdln(&format!("{}", edit_todo))
+            .unwrap();
 
         self.logger
             .as_mut()
             .unwrap()
             .log_std(&"New Title: ")
             .unwrap();
+
         stdout().flush().unwrap();
         let mut new_title = String::new();
         io::stdin().read_line(&mut new_title).unwrap();
@@ -163,7 +178,12 @@ impl<'a> Action<'a> {
     fn update_todo_status(&mut self, status: String) -> Result<(), &'static str> {
         let item_index: usize = self.get_item_index_arg()?;
 
-        println!("Editing #{} ToDo item", item_index + 1);
+        self.logger
+            .as_mut()
+            .unwrap()
+            .log_stdln(&format!("Editing #{} ToDo item", item_index + 1))
+            .unwrap();
+
         let mut todos: Vec<ToDo> = database::read_items()?;
 
         let mut edit_todo = match todos.get_mut(item_index) {
@@ -197,7 +217,11 @@ impl<'a> Action<'a> {
             return Err("Given item index is wrong");
         }
 
-        println!("Deleting #{} ToDo item", item_index + 1);
+        self.logger
+            .as_mut()
+            .unwrap()
+            .log_stdln(&format!("Deleting #{} ToDo item", item_index + 1))
+            .unwrap();
 
         todos.remove(item_index);
 

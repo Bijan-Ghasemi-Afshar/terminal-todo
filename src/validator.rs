@@ -62,100 +62,82 @@ impl<'a> Validator {
 
 #[cfg(test)]
 mod tests {
-    use std::io::{self, ErrorKind};
+    use std::{
+        error::Error,
+        io::{self, ErrorKind},
+    };
 
     use super::*;
-    use crate::error_logger::ErrorLogger;
-
-    fn empty_func(_: Vec<String>) -> Result<(), &'static str> {
-        Ok(())
-    }
-
-    #[test]
-    fn validates_action_correctly() {
-        let valid_action = Validator::validate_action("create".into());
-        assert!(valid_action.is_ok());
-    }
-
-    #[test]
-    fn returns_error_if_action_in_invalid() {
-        assert_eq!(
-            Validator::validate_action("invalid".into()),
-            Err("An action needs to be provided\ncreate\nlist\nedit [index]\ndone [index]\nundone [index]\ndelete [index]")
-        );
-    }
-
-    #[test]
-    fn validates_arguments_correctly() {
-        let action_with_args: Action = Action {
-            name: "list",
-            requires_arguments: true,
-            arguments: vec![],
-            execute: empty_func,
-        };
-
-        let mut err_logger = ErrorLogger::new(Box::new(vec![]));
-
-        let args = vec![String::from("test"), String::from("test")];
-
-        let valid_action =
-            Validator::validate_arguments(args.into_iter(), action_with_args, &mut err_logger);
-
-        assert!(valid_action.is_ok());
-    }
-
-    #[test]
-    fn validates_arguments_if_not_passed_required_arguments() {
-        let action_with_no_required_args: Action = Action {
-            name: "list",
-            requires_arguments: true,
-            arguments: vec![],
-            execute: empty_func,
-        };
-
-        let mut err_logger = ErrorLogger::new(Box::new(vec![]));
-
-        assert_eq!(
-            Validator::validate_arguments(
-                [].into_iter(),
-                action_with_no_required_args,
-                &mut err_logger
-            ),
-            Err("action requires arguments"),
-        );
-    }
+    use crate::log_wrapper::Logger;
 
     struct MockErrorLogger {
         was_called: bool,
     }
 
     impl Logger for MockErrorLogger {
-        fn log<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn std::error::Error>> {
+        fn log_errln<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn std::error::Error>> {
             if msg == "" {
                 return Err(Box::new(io::Error::new(ErrorKind::Other, "oh no!")));
             }
             self.was_called = true;
             Ok(())
         }
+        fn log_stdln<'a>(&mut self, _msg: &'a str) -> Result<(), Box<dyn Error>> {
+            Ok(())
+        }
+        fn log_err<'a>(&mut self, _msg: &'a str) -> Result<(), Box<dyn Error>> {
+            Ok(())
+        }
+        fn log_std<'a>(&mut self, _msg: &'a str) -> Result<(), Box<dyn Error>> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn validates_arguments_correctly() {
+        let mut mock_logger = MockErrorLogger { was_called: false };
+
+        let mut action_with_args: Action = Action::new(&"create", &mut mock_logger).unwrap();
+
+        let args = vec![String::from("test"), String::from("test")];
+
+        let valid_action = Validator::validate_arguments::<
+            std::vec::IntoIter<String>,
+            MockErrorLogger,
+        >(args.into_iter(), &mut action_with_args);
+
+        assert!(valid_action.is_ok());
+    }
+
+    #[test]
+    fn validates_arguments_if_not_passed_required_arguments() {
+        let mut mock_logger = MockErrorLogger { was_called: false };
+
+        let mut action_with_no_required_args: Action =
+            Action::new(&"edit", &mut mock_logger).unwrap();
+
+        assert_eq!(
+            Validator::validate_arguments::<std::vec::IntoIter<String>, MockErrorLogger>(
+                Vec::<String>::new().into_iter(),
+                &mut action_with_no_required_args
+            ),
+            Err("Action requires arguments"),
+        );
     }
 
     #[test]
     fn prints_warning_if_arguments_are_not_required() {
-        let action_with_no_required_args: Action = Action {
-            name: "create",
-            requires_arguments: false,
-            arguments: vec![],
-            execute: empty_func,
-        };
-        let args = vec![String::from("test"), String::from("test")];
-
         let mut mock_logger = MockErrorLogger { was_called: false };
 
-        let valid_action = Validator::validate_arguments(
-            args.into_iter(),
-            action_with_no_required_args,
-            &mut mock_logger,
-        );
+        let mut action_with_no_required_args: Action =
+            Action::new(&"create", &mut mock_logger).unwrap();
+
+        let args = vec![String::from("test"), String::from("test")];
+
+        let valid_action = Validator::validate_arguments::<
+            std::vec::IntoIter<String>,
+            MockErrorLogger,
+        >(args.into_iter(), &mut action_with_no_required_args);
 
         assert!(valid_action.is_ok());
 

@@ -1,16 +1,18 @@
+use std::any::Any;
 use std::{error::Error, io::Write};
 
-pub trait Logger {
+pub trait Logger: Any {
     fn log_errln<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn Error>>;
     fn log_stdln<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn Error>>;
     fn log_err<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn Error>>;
     fn log_std<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn Error>>;
 }
 
+#[derive(PartialEq, Debug)]
 pub struct LogWrapper<ERRW, STDW>
 where
-    ERRW: Write,
-    STDW: Write,
+    ERRW: Write + 'static,
+    STDW: Write + 'static,
 {
     err_writer: ERRW,
     std_writer: STDW,

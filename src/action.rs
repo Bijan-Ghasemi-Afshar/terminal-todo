@@ -4,6 +4,7 @@ use std::io::{self, stdout, Write};
 
 pub mod database;
 
+#[derive(PartialEq, Debug)]
 pub enum ActionType {
     Create(bool),
     List(bool),
@@ -38,7 +39,7 @@ impl ActionType {
     }
 }
 
-/* #[derive(PartialEq, Debug)] */
+/* #[derive(PartialEq)] */
 pub struct Action<'a> {
     pub action_type: ActionType,
     pub requires_arguments: bool,
@@ -253,5 +254,82 @@ impl Display for Action<'_> {
             "Action:\nRequired Arguments: {:?}\nArguments{:?}",
             self.requires_arguments, self.arguments
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::log_wrapper::Logger;
+    use std::{error::Error, io::ErrorKind};
+
+    #[test]
+    fn can_create_new_action_type() {
+        let action_type: ActionType = ActionType::new(&"create").unwrap();
+        assert_eq!(action_type, ActionType::Create(false));
+    }
+
+    #[test]
+    fn should_return_error_if_action_type_is_wrong() {
+        let action_type: Result<ActionType, &'static str> = ActionType::new(&"wrong");
+        assert_eq!(action_type, Err("Action is not valid"));
+    }
+
+    #[test]
+    fn should_return_correct_value_for_required_args() {
+        let action_type = ActionType::new(&"create").unwrap();
+        assert_eq!(action_type.requires_arguments(), false);
+
+        let action_type = ActionType::new(&"list").unwrap();
+        assert_eq!(action_type.requires_arguments(), false);
+
+        let action_type = ActionType::new(&"edit").unwrap();
+        assert_eq!(action_type.requires_arguments(), true);
+
+        let action_type = ActionType::new(&"done").unwrap();
+        assert_eq!(action_type.requires_arguments(), true);
+
+        let action_type = ActionType::new(&"undone").unwrap();
+        assert_eq!(action_type.requires_arguments(), true);
+
+        let action_type = ActionType::new(&"delete").unwrap();
+        assert_eq!(action_type.requires_arguments(), true);
+    }
+
+    #[derive(PartialEq)]
+    struct MockErrorLogger {
+        was_called: bool,
+    }
+
+    impl Logger for MockErrorLogger {
+        fn log_errln<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn std::error::Error>> {
+            if msg == "" {
+                return Err(Box::new(io::Error::new(ErrorKind::Other, "oh no!")));
+            }
+            self.was_called = true;
+            Ok(())
+        }
+        fn log_stdln<'a>(&mut self, _msg: &'a str) -> Result<(), Box<dyn Error>> {
+            Ok(())
+        }
+        fn log_err<'a>(&mut self, _msg: &'a str) -> Result<(), Box<dyn Error>> {
+            Ok(())
+        }
+        fn log_std<'a>(&mut self, _msg: &'a str) -> Result<(), Box<dyn Error>> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn should_make_action_properly() {
+        let mut logger = MockErrorLogger { was_called: false };
+        let action = Action::new(&"create", &mut logger);
+        let expected = Action {
+            action_type: ActionType::Create(false),
+            requires_arguments: false,
+            arguments: vec![],
+            logger: Some(&mut logger),
+        };
+        assert_eq!(action, Ok(expected));
     }
 }

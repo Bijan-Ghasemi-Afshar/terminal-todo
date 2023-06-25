@@ -6,6 +6,7 @@ pub trait Logger: Any {
     fn log_stdln<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn Error>>;
     fn log_err<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn Error>>;
     fn log_std<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn Error>>;
+    fn as_any(&self) -> &dyn Any;
 }
 
 #[derive(PartialEq, Debug)]
@@ -51,5 +52,9 @@ where
     fn log_std<'a>(&mut self, msg: &'a str) -> Result<(), Box<dyn Error>> {
         write!(self.std_writer, "{}", &msg)?;
         Ok(())
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }

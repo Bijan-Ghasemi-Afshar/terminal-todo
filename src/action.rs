@@ -1,5 +1,5 @@
 use crate::{log_wrapper::Logger, todo::ToDo};
-use std::fmt::Display;
+use std::fmt::{self, Display};
 use std::io::{self, stdout, Write};
 
 pub mod database;
@@ -39,12 +39,31 @@ impl ActionType {
     }
 }
 
-/* #[derive(PartialEq)] */
 pub struct Action<'a> {
     pub action_type: ActionType,
     pub requires_arguments: bool,
     pub arguments: Vec<String>,
     pub logger: Option<&'a mut dyn Logger>,
+}
+
+impl<'a> fmt::Debug for Action<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Action")
+            .field("logger", &"Logging object") // Add your desired representation here
+            .finish()
+    }
+}
+
+impl<'a> PartialEq for Action<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        let self_type = self.logger.as_ref().unwrap().as_any().type_id();
+        let other_type = other.logger.as_ref().unwrap().as_any().type_id();
+
+        self.action_type == other.action_type
+            && self.requires_arguments == other.requires_arguments
+            && self.arguments == other.arguments
+            && self_type == other_type
+    }
 }
 
 impl<'a> Action<'a> {
@@ -260,8 +279,11 @@ impl Display for Action<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::log_wrapper::Logger;
-    use std::{error::Error, io::ErrorKind};
+    use crate::log_wrapper::{LogWrapper, Logger};
+    use std::{
+        error::Error,
+        io::{ErrorKind, Stderr, Stdout},
+    };
 
     #[test]
     fn can_create_new_action_type() {
@@ -296,7 +318,7 @@ mod tests {
         assert_eq!(action_type.requires_arguments(), true);
     }
 
-    #[derive(PartialEq)]
+    #[derive(PartialEq, Clone)]
     struct MockErrorLogger {
         was_called: bool,
     }
@@ -318,18 +340,34 @@ mod tests {
         fn log_std<'a>(&mut self, _msg: &'a str) -> Result<(), Box<dyn Error>> {
             Ok(())
         }
+
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
     }
 
     #[test]
     fn should_make_action_properly() {
-        let mut logger = MockErrorLogger { was_called: false };
-        let action = Action::new(&"create", &mut logger);
+        let mut mock_logger = MockErrorLogger { was_called: false };
+        let mut other_mock_logger = MockErrorLogger { was_called: false };
+        let mut log_wrapper: LogWrapper<Stderr, Stdout> =
+            LogWrapper::new(io::stderr(), io::stdout());
+        let action = Action::new(&"create", &mut mock_logger);
+
         let expected = Action {
             action_type: ActionType::Create(false),
             requires_arguments: false,
             arguments: vec![],
-            logger: Some(&mut logger),
+            logger: Some(&mut other_mock_logger),
         };
         assert_eq!(action, Ok(expected));
+
+        let expected = Action {
+            action_type: ActionType::Create(false),
+            requires_arguments: false,
+            arguments: vec![],
+            logger: Some(&mut log_wrapper),
+        };
+        assert_ne!(action, Ok(expected));
     }
 }

@@ -57,6 +57,13 @@ mod tests {
     use super::*;
 
     #[test]
+    fn should_make_a_new_todo_properly() {
+        let expected: ToDo = ToDo { title: "title".into(), description: "description".into(), done: "❌".into() };
+        let todo: ToDo = ToDo::new("title".into(), "description".into());
+        assert_eq!(todo, expected);
+    }
+
+    #[test]
     fn should_serialise_properly() {
         let todo: ToDo = ToDo::new("title".into(), "description".into());
 

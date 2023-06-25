@@ -91,6 +91,10 @@ mod tests {
         fn log_std<'a>(&mut self, _msg: &'a str) -> Result<(), Box<dyn Error>> {
             Ok(())
         }
+
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
     }
 
     #[test]

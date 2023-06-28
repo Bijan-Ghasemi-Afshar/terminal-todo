@@ -2,6 +2,8 @@ use crate::{log_wrapper::Logger, todo::ToDo};
 use std::fmt::{self, Display};
 use std::io::{self, stdout, Write};
 
+use self::database::Database;
+
 pub mod database;
 
 #[derive(PartialEq, Debug)]
@@ -44,6 +46,7 @@ pub struct Action<'a> {
     pub requires_arguments: bool,
     pub arguments: Vec<String>,
     pub logger: Option<&'a mut dyn Logger>,
+    pub database: Option<&'a dyn Database>,
 }
 
 impl<'a> fmt::Debug for Action<'a> {
@@ -67,7 +70,11 @@ impl<'a> PartialEq for Action<'a> {
 }
 
 impl<'a> Action<'a> {
-    pub fn new(action_type: &str, logger: &'a mut dyn Logger) -> Result<Self, &'static str> {
+    pub fn new(
+        action_type: &str,
+        logger: &'a mut dyn Logger,
+        database: &'a dyn Database,
+    ) -> Result<Self, &'static str> {
         let act_type = ActionType::new(action_type)?;
         let req_args = act_type.requires_arguments();
 
@@ -76,6 +83,7 @@ impl<'a> Action<'a> {
             requires_arguments: req_args,
             arguments: vec![],
             logger: Some(logger),
+            database: Some(database),
         })
     }
 
@@ -97,7 +105,10 @@ impl<'a> Action<'a> {
             .log_stdln(&"Printing all ToDo items.")
             .unwrap();
 
-        let todos: Vec<ToDo> = database::read_items()?;
+        let todos: Vec<ToDo> = self
+            .database
+            .expect("Database could not be found")
+            .read_items()?;
 
         todos.iter().enumerate().for_each(|(index, todo)| {
             self.logger
@@ -136,7 +147,9 @@ impl<'a> Action<'a> {
 
         let todo: ToDo = ToDo::new(title, description);
 
-        database::store_item(todo)?;
+        self.database
+            .expect("Database could not be found")
+            .store_item(todo)?;
 
         Ok(())
     }
@@ -144,7 +157,10 @@ impl<'a> Action<'a> {
     fn edit(&mut self) -> Result<(), &'static str> {
         let item_index: usize = self.get_item_index_arg()?;
 
-        let mut todos: Vec<ToDo> = database::read_items()?;
+        let mut todos: Vec<ToDo> = self
+            .database
+            .expect("Database could not be found")
+            .read_items()?;
 
         let mut edit_todo = match todos.get_mut(item_index) {
             Some(todo) => todo,
@@ -190,7 +206,9 @@ impl<'a> Action<'a> {
             edit_todo.description = new_description;
         }
 
-        database::store_existing_items(todos)?;
+        self.database
+            .expect("Database could not be found")
+            .store_existing_items(todos)?;
 
         Ok(())
     }
@@ -204,7 +222,10 @@ impl<'a> Action<'a> {
             .log_stdln(&format!("Editing #{} ToDo item", item_index + 1))
             .unwrap();
 
-        let mut todos: Vec<ToDo> = database::read_items()?;
+        let mut todos: Vec<ToDo> = self
+            .database
+            .expect("Database could not be found")
+            .read_items()?;
 
         let mut edit_todo = match todos.get_mut(item_index) {
             Some(todo) => todo,
@@ -213,7 +234,9 @@ impl<'a> Action<'a> {
 
         edit_todo.done = status;
 
-        database::store_existing_items(todos)?;
+        self.database
+            .expect("Database could not be found")
+            .store_existing_items(todos)?;
 
         Ok(())
     }
@@ -231,7 +254,10 @@ impl<'a> Action<'a> {
     fn delete(&mut self) -> Result<(), &'static str> {
         let item_index: usize = self.get_item_index_arg()?;
 
-        let mut todos: Vec<ToDo> = database::read_items()?;
+        let mut todos: Vec<ToDo> = self
+            .database
+            .expect("Database could not be found")
+            .read_items()?;
 
         if item_index >= todos.len() || item_index <= 0 {
             return Err("Given item index is wrong");
@@ -245,7 +271,9 @@ impl<'a> Action<'a> {
 
         todos.remove(item_index);
 
-        database::store_existing_items(todos)?;
+        self.database
+            .expect("Database could not be found")
+            .store_existing_items(todos)?;
 
         Ok(())
     }
@@ -346,19 +374,39 @@ mod tests {
         }
     }
 
+    struct MockDatabase {}
+
+    impl Database for MockDatabase {
+        fn read_items(&self) -> Result<Vec<ToDo>, &'static str> {
+            let todo = ToDo::new("title".into(), "description".into());
+            Ok(vec![todo])
+        }
+
+        fn store_existing_items(&self, _: Vec<ToDo>) -> Result<(), &'static str> {
+            todo!()
+        }
+
+        fn store_item(&self, _: ToDo) -> Result<(), &'static str> {
+            todo!()
+        }
+    }
+
     #[test]
     fn should_make_action_properly() {
         let mut mock_logger = MockErrorLogger { was_called: false };
         let mut other_mock_logger = MockErrorLogger { was_called: false };
         let mut log_wrapper: LogWrapper<Stderr, Stdout> =
             LogWrapper::new(io::stderr(), io::stdout());
-        let action = Action::new(&"create", &mut mock_logger);
+        let database = MockDatabase {};
+
+        let action = Action::new(&"create", &mut mock_logger, &database);
 
         let expected = Action {
             action_type: ActionType::Create(false),
             requires_arguments: false,
             arguments: vec![],
             logger: Some(&mut other_mock_logger),
+            database: None,
         };
         assert_eq!(action, Ok(expected));
 
@@ -367,7 +415,28 @@ mod tests {
             requires_arguments: false,
             arguments: vec![],
             logger: Some(&mut log_wrapper),
+            database: None,
         };
         assert_ne!(action, Ok(expected));
+    }
+
+    #[test]
+    fn should_list_todo_properly() {
+        let mock_logger_err: Vec<u8> = Vec::<u8>::new();
+        let mock_logger_std: Vec<u8> = Vec::new();
+        let mut logger = LogWrapper::new(mock_logger_err, mock_logger_std);
+        let database = MockDatabase {};
+        let mut list_action = Action::new("list".into(), &mut logger, &database).unwrap();
+        let res = list_action.execute_action();
+        assert_eq!(res, Ok(()));
+        let logs = "Printing all ToDo items.
+===============
+# 1
+Title: title
+Description: description
+Done: ❌
+===============\n\n";
+
+        assert_eq!(logger.std_writer, logs.as_bytes());
     }
 }

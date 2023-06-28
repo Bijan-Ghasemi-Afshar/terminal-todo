@@ -1,4 +1,5 @@
 use std::{
+    any::Any,
     env,
     fs::{DirBuilder, File},
     io::{Read, Write},
@@ -7,7 +8,15 @@ use std::{
 
 use crate::todo::ToDo;
 
+pub trait Database: Any {
+    fn read_items(&self) -> Result<Vec<ToDo>, &'static str>;
+    fn store_existing_items(&self, todos: Vec<ToDo>) -> Result<(), &'static str>;
+    fn store_item(&self, todo: ToDo) -> Result<(), &'static str>;
+}
+
 const DATABASE_NAME: &str = "todo-list.txt";
+
+pub struct DatabaseAgent {}
 
 fn get_database() -> Result<String, &'static str> {
     let database_location = env::var("TODO_DB").unwrap_or_else(|_| {
@@ -45,69 +54,71 @@ fn get_database() -> Result<String, &'static str> {
     Ok(format!("{}/{}", database_location, DATABASE_NAME))
 }
 
-pub fn store_item(todo: ToDo) -> Result<(), &'static str> {
-    let db = get_database()?;
+impl Database for DatabaseAgent {
+    fn store_item(&self, todo: ToDo) -> Result<(), &'static str> {
+        let db = get_database()?;
 
-    let mut database: File = File::options()
-        .append(true)
-        .create(true)
-        .open(db)
-        .expect("Error finding the database");
+        let mut database: File = File::options()
+            .append(true)
+            .create(true)
+            .open(db)
+            .expect("Error finding the database");
 
-    database
-        .write(todo.serialise().as_bytes())
-        .expect("Error storing ToDo item");
+        database
+            .write(todo.serialise().as_bytes())
+            .expect("Error storing ToDo item");
 
-    println!("Item added to the database");
+        println!("Item added to the database");
 
-    Ok(())
-}
-
-pub fn store_existing_items(todos: Vec<ToDo>) -> Result<(), &'static str> {
-    let db = get_database()?;
-
-    let mut database: File = File::options()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .open(db)
-        .expect("Error openning the database");
-
-    let mut serialised_todos = Vec::new();
-
-    todos.iter().for_each(|todo| {
-        serialised_todos.push(todo.serialise());
-    });
-
-    let serialised_todos = serialised_todos.join("");
-
-    database
-        .write(&serialised_todos.as_bytes())
-        .expect("Error storing ToDo item");
-
-    Ok(())
-}
-
-pub fn read_items() -> Result<Vec<ToDo>, &'static str> {
-    let db = get_database()?;
-
-    let mut database: File = File::options()
-        .write(true)
-        .create(true)
-        .read(true)
-        .open(db)
-        .expect("Error openning the database");
-
-    let mut todo_items: Vec<ToDo> = vec![];
-    let mut db_content: String = String::new();
-
-    database
-        .read_to_string(&mut db_content)
-        .expect("Error reading the database content");
-
-    for todo_serialised in db_content.lines() {
-        todo_items.push(ToDo::deserialise(todo_serialised)?);
+        Ok(())
     }
 
-    Ok(todo_items)
+    fn store_existing_items(&self, todos: Vec<ToDo>) -> Result<(), &'static str> {
+        let db = get_database()?;
+
+        let mut database: File = File::options()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(db)
+            .expect("Error openning the database");
+
+        let mut serialised_todos = Vec::new();
+
+        todos.iter().for_each(|todo| {
+            serialised_todos.push(todo.serialise());
+        });
+
+        let serialised_todos = serialised_todos.join("");
+
+        database
+            .write(&serialised_todos.as_bytes())
+            .expect("Error storing ToDo item");
+
+        Ok(())
+    }
+
+    fn read_items(&self) -> Result<Vec<ToDo>, &'static str> {
+        let db = get_database()?;
+
+        let mut database: File = File::options()
+            .write(true)
+            .create(true)
+            .read(true)
+            .open(db)
+            .expect("Error openning the database");
+
+        let mut todo_items: Vec<ToDo> = vec![];
+        let mut db_content: String = String::new();
+
+        database
+            .read_to_string(&mut db_content)
+            .expect("Error reading the database content");
+
+        for todo_serialised in db_content.lines() {
+            todo_items.push(ToDo::deserialise(todo_serialised)?);
+        }
+
+        Ok(todo_items)
+    }
 }

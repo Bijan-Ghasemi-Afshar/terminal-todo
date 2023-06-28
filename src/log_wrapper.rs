@@ -15,8 +15,8 @@ where
     ERRW: Write + 'static,
     STDW: Write + 'static,
 {
-    err_writer: ERRW,
-    std_writer: STDW,
+    pub err_writer: ERRW,
+    pub std_writer: STDW,
 }
 
 impl<ERRW, STDW> LogWrapper<ERRW, STDW>

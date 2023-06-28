@@ -1,4 +1,7 @@
-use crate::{action::Action, log_wrapper::Logger};
+use crate::{
+    action::{database::Database, Action},
+    log_wrapper::Logger,
+};
 use std::env::Args;
 
 pub struct Validator {}
@@ -7,6 +10,7 @@ impl<'a> Validator {
     pub fn validate_input<L: Logger + 'a>(
         mut user_input: Args,
         logger: &'a mut L,
+        database: &'a dyn Database,
     ) -> Result<Action<'a>, &'static str> {
         if user_input.len() < 2 {
             return Err("An action needs to be provided\ncreate\nlist\nedit [index]\ndone [index]\nundone [index]\ndelete [index]");
@@ -17,7 +21,7 @@ impl<'a> Validator {
 
         // Get the action
         let mut valid_action: Action = match user_input.next() {
-            Some(op) => Action::new(&op, logger)?,
+            Some(op) => Action::new(&op, logger, database)?,
             None => return Err("Error parsing action"),
         };
 
@@ -68,7 +72,7 @@ mod tests {
     };
 
     use super::*;
-    use crate::log_wrapper::Logger;
+    use crate::{action::database::Database, log_wrapper::Logger};
 
     struct MockErrorLogger {
         was_called: bool,
@@ -97,11 +101,29 @@ mod tests {
         }
     }
 
+    struct MockDatabase {}
+
+    impl Database for MockDatabase {
+        fn read_items(&self) -> Result<Vec<crate::todo::ToDo>, &'static str> {
+            todo!()
+        }
+
+        fn store_existing_items(&self, _: Vec<crate::todo::ToDo>) -> Result<(), &'static str> {
+            todo!()
+        }
+
+        fn store_item(&self, _: crate::todo::ToDo) -> Result<(), &'static str> {
+            todo!()
+        }
+    }
+
     #[test]
     fn validates_arguments_correctly() {
         let mut mock_logger = MockErrorLogger { was_called: false };
+        let database = MockDatabase {};
 
-        let mut action_with_args: Action = Action::new(&"create", &mut mock_logger).unwrap();
+        let mut action_with_args: Action =
+            Action::new(&"create", &mut mock_logger, &database).unwrap();
 
         let args = vec![String::from("test"), String::from("test")];
 
@@ -116,9 +138,10 @@ mod tests {
     #[test]
     fn validates_arguments_if_not_passed_required_arguments() {
         let mut mock_logger = MockErrorLogger { was_called: false };
+        let database = MockDatabase {};
 
         let mut action_with_no_required_args: Action =
-            Action::new(&"edit", &mut mock_logger).unwrap();
+            Action::new(&"edit", &mut mock_logger, &database).unwrap();
 
         assert_eq!(
             Validator::validate_arguments::<std::vec::IntoIter<String>, MockErrorLogger>(
@@ -132,9 +155,10 @@ mod tests {
     #[test]
     fn prints_warning_if_arguments_are_not_required() {
         let mut mock_logger = MockErrorLogger { was_called: false };
+        let database = MockDatabase {};
 
         let mut action_with_no_required_args: Action =
-            Action::new(&"create", &mut mock_logger).unwrap();
+            Action::new(&"create", &mut mock_logger, &database).unwrap();
 
         let args = vec![String::from("test"), String::from("test")];
 

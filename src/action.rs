@@ -52,7 +52,7 @@ pub struct Action<'a> {
 impl<'a> fmt::Debug for Action<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Action")
-            .field("logger", &"Logging object") // Add your desired representation here
+            .field("logger", &"Logging object")
             .finish()
     }
 }
@@ -259,7 +259,7 @@ impl<'a> Action<'a> {
             .expect("Database could not be found")
             .read_items()?;
 
-        if item_index >= todos.len() || item_index <= 0 {
+        if item_index >= todos.len() {
             return Err("Given item index is wrong");
         }
 
@@ -383,7 +383,7 @@ mod tests {
         }
 
         fn store_existing_items(&self, _: Vec<ToDo>) -> Result<(), &'static str> {
-            todo!()
+            Ok(())
         }
 
         fn store_item(&self, _: ToDo) -> Result<(), &'static str> {
@@ -438,5 +438,71 @@ Done: ❌
 ===============\n\n";
 
         assert_eq!(logger.std_writer, logs.as_bytes());
+    }
+
+    #[test]
+    fn should_mark_todo_as_done() {
+        let mock_logger_err: Vec<u8> = Vec::<u8>::new();
+        let mock_logger_std: Vec<u8> = Vec::new();
+        let mut logger = LogWrapper::new(mock_logger_err, mock_logger_std);
+        let database = MockDatabase {};
+        let mut list_action = Action::new("done".into(), &mut logger, &database).unwrap();
+        list_action.arguments = vec!["1".into()];
+        let res = list_action.execute_action();
+        assert_eq!(res, Ok(()));
+        let logs = "Editing #1 ToDo item\n";
+        assert_eq!(logger.std_writer, logs.as_bytes());
+    }
+
+    #[test]
+    fn should_mark_todo_as_undone() {
+        let mock_logger_err: Vec<u8> = Vec::<u8>::new();
+        let mock_logger_std: Vec<u8> = Vec::new();
+        let mut logger = LogWrapper::new(mock_logger_err, mock_logger_std);
+        let database = MockDatabase {};
+        let mut list_action = Action::new("undone".into(), &mut logger, &database).unwrap();
+        list_action.arguments = vec!["1".into()];
+        let res = list_action.execute_action();
+        assert_eq!(res, Ok(()));
+        let logs = "Editing #1 ToDo item\n";
+        assert_eq!(logger.std_writer, logs.as_bytes());
+    }
+
+    #[test]
+    fn should_delete_todo_item_successfully() {
+        let mock_logger_err: Vec<u8> = Vec::<u8>::new();
+        let mock_logger_std: Vec<u8> = Vec::new();
+        let mut logger = LogWrapper::new(mock_logger_err, mock_logger_std);
+        let database = MockDatabase {};
+        let mut list_action = Action::new("delete".into(), &mut logger, &database).unwrap();
+        list_action.arguments = vec!["1".into()];
+        let res = list_action.execute_action();
+        assert_eq!(res, Ok(()));
+        let logs = "Deleting #1 ToDo item\n";
+        assert_eq!(logger.std_writer, logs.as_bytes());
+    }
+
+    #[test]
+    fn should_throw_error_if_negative_index_for_delete_is_given() {
+        let mock_logger_err: Vec<u8> = Vec::<u8>::new();
+        let mock_logger_std: Vec<u8> = Vec::new();
+        let mut logger = LogWrapper::new(mock_logger_err, mock_logger_std);
+        let database = MockDatabase {};
+        let mut list_action = Action::new("delete".into(), &mut logger, &database).unwrap();
+        list_action.arguments = vec!["-1".into()];
+        let res = list_action.execute_action();
+        assert_eq!(res, Err("Given argument should be a positive number"));
+    }
+
+    #[test]
+    fn should_throw_error_if_non_existing_index_for_delete_is_given() {
+        let mock_logger_err: Vec<u8> = Vec::<u8>::new();
+        let mock_logger_std: Vec<u8> = Vec::new();
+        let mut logger = LogWrapper::new(mock_logger_err, mock_logger_std);
+        let database = MockDatabase {};
+        let mut list_action = Action::new("delete".into(), &mut logger, &database).unwrap();
+        list_action.arguments = vec!["100".into()];
+        let res = list_action.execute_action();
+        assert_eq!(res, Err("Given item index is wrong"));
     }
 }
